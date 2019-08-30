@@ -7,7 +7,7 @@ Create API REST for create/configure network interface and keepalived VRRP confi
 Compile:
 --------
 
-export GO111MODULE=on
+export GO111MODULE=on  
 go build -o lvsnetwork-api
 
 Run:
