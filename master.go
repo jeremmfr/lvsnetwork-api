@@ -105,7 +105,10 @@ func jsonDataValidate(ifaceVrrp ifaceVrrpType) string {
 func addIfaceVrrp(w http.ResponseWriter, r *http.Request) {
 	if *htpasswdfile != "" {
 		htpasswd := auth.HtpasswdFileProvider(*htpasswdfile)
-		authenticator := auth.NewBasicAuthenticator("Basic Realm", htpasswd)
+		authenticator := auth.BasicAuth{
+			Realm:   "Basic Realm",
+			Secrets: htpasswd,
+		}
 		usercheck := authenticator.CheckAuth(r)
 		if usercheck == "" {
 			w.WriteHeader(http.StatusUnauthorized)
@@ -324,7 +327,10 @@ func addIfaceVrrp(w http.ResponseWriter, r *http.Request) {
 func removeIfaceVrrp(w http.ResponseWriter, r *http.Request) {
 	if *htpasswdfile != "" {
 		htpasswd := auth.HtpasswdFileProvider(*htpasswdfile)
-		authenticator := auth.NewBasicAuthenticator("Basic Realm", htpasswd)
+		authenticator := auth.BasicAuth{
+			Realm:   "Basic Realm",
+			Secrets: htpasswd,
+		}
 		usercheck := authenticator.CheckAuth(r)
 		if usercheck == "" {
 			w.WriteHeader(http.StatusUnauthorized)
@@ -439,7 +445,10 @@ func removeIfaceVrrp(w http.ResponseWriter, r *http.Request) {
 func checkIfaceVrrp(w http.ResponseWriter, r *http.Request) {
 	if *htpasswdfile != "" {
 		htpasswd := auth.HtpasswdFileProvider(*htpasswdfile)
-		authenticator := auth.NewBasicAuthenticator("Basic Realm", htpasswd)
+		authenticator := auth.BasicAuth{
+			Realm:   "Basic Realm",
+			Secrets: htpasswd,
+		}
 		usercheck := authenticator.CheckAuth(r)
 		if usercheck == "" {
 			w.WriteHeader(http.StatusUnauthorized)
@@ -613,7 +622,10 @@ func checkIfaceVrrp(w http.ResponseWriter, r *http.Request) {
 func changeIfaceVrrp(w http.ResponseWriter, r *http.Request) {
 	if *htpasswdfile != "" {
 		htpasswd := auth.HtpasswdFileProvider(*htpasswdfile)
-		authenticator := auth.NewBasicAuthenticator("Basic Realm", htpasswd)
+		authenticator := auth.BasicAuth{
+			Realm:   "Basic Realm",
+			Secrets: htpasswd,
+		}
 		usercheck := authenticator.CheckAuth(r)
 		if usercheck == "" {
 			w.WriteHeader(http.StatusUnauthorized)
@@ -930,7 +942,10 @@ func changeIfaceVrrp(w http.ResponseWriter, r *http.Request) {
 func moveIDIfaceVrrp(w http.ResponseWriter, r *http.Request) {
 	if *htpasswdfile != "" {
 		htpasswd := auth.HtpasswdFileProvider(*htpasswdfile)
-		authenticator := auth.NewBasicAuthenticator("Basic Realm", htpasswd)
+		authenticator := auth.BasicAuth{
+			Realm:   "Basic Realm",
+			Secrets: htpasswd,
+		}
 		usercheck := authenticator.CheckAuth(r)
 		if usercheck == "" {
 			w.WriteHeader(http.StatusUnauthorized)
