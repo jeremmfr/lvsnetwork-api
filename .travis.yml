@@ -7,5 +7,18 @@ before_script:
   - curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh| sh -s -- -b $(go env GOPATH)/bin v1.19.1
 
 script:
-  - go build -o /dev/null
+  - go test -v ./...
   - golangci-lint run
+
+before_deploy:
+  - export REPO_NAME=$(echo $TRAVIS_REPO_SLUG | cut -d'/' -f2)
+  - go build -o ${REPO_NAME}
+  - tar -czvf ${REPO_NAME}_${TRAVIS_TAG}_linux_amd64.tar.gz ${REPO_NAME}
+deploy:
+  provider: releases
+  api_key:
+    secure: "koK4hrcJhAVMr/eVVwzhqa9/zFrnv9e1HWHfF0wsLMJCkcWtkWI4iYFMijZrS9F7zJmVzP7XfU5CXFXVwUJ/NtDiqq1tEqpBV6sKgt0DZ+z03N4o5w0lc3SxpWO3yGVzqaSQekPcq3Pc7+Vj6rpopOO564tC4McDZMQFojR2/jf4Zk/wtVB10JD3RTZeTN1vgor8ZKwOgrt4AQ5HcjUj2+EipGAcn+pxGEP72NvKGlQqj1reLq3DmQmOfUgGgUIe9YlebM5HFDkxOdjAzyyHU3c1tMQsHkjUTQsW7pYdshavUwAdXJKAKzu7H/NihLa5furVPBuTRYcsd/rJg+o427grMmko5vaho43gzQefVFLVTNbbHKrjs0pKy+CU3myGGAIcORFDtnwSYEpjsbH3R8EG0ieECPWYyCZ+o9bzYj8zLgIZ1kjj8/dp5lH1jyOnzPgeo3c4inOjI16MXYrrv2QBhoQJDFpxTYNHNiojudHtGLsUnphfoOs6Ebd0FAV9dL8Cdntn4oVlzStfDlfwdYX94LgFA0j32QiKlnoKjrsyVLx4Fa3z3nb6LkBWm5M71weofifV8vwpCWXmT3vx4fh7EUv6vNQZa1FenBKtS6cWkjS3jt1tmlOZi/3YHl59Xjp4ADyDGauFFbTQjDWNoIOVvZFQz+sctV1SLkWh7pE="
+  file: ${REPO_NAME}_${TRAVIS_TAG}_linux_amd64.tar.gz
+  skip_cleanup: true
+  on:
+    tags: true
