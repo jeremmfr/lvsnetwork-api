@@ -39,6 +39,19 @@ type ifaceVrrpType struct {
 	AdvertInt         string   `json:"Advert_int"`
 	IPVip             []string `json:"IP_vip"`
 	PostUp            []string `json:"Post_up"`
+	TrackScript       []string `json:"track_script"`
+}
+type vrrpScriptType struct {
+	InitFail      bool   `json:"init_fail"`
+	WeightReverse bool   `json:"weight_reverse"`
+	Fall          int    `json:"fall"`
+	Interval      int    `json:"interval"`
+	Rise          int    `json:"rise"`
+	Timeout       int    `json:"timeout"`
+	Weight        int    `json:"weight"`
+	Name          string `json:"name"`
+	Script        string `json:"script"`
+	User          string `json:"user"`
 }
 
 var (
@@ -69,7 +82,8 @@ func main() {
 	listenPortSlave = flag.String("port_slave", "8080", "listen slave on port")
 	httpsSlave = flag.Bool("https_slave", false, "https for request from master to slave ?")
 	timeSleep = flag.Int("sleep", 10, "time for sleep before check iface communicate")
-	reloadKeepalivedCommand = flag.String("reload_cmd", "/etc/init.d/keepalived-vrrp reload", "command for reload vrrp keepalived process")
+	reloadKeepalivedCommand = flag.String("reload_cmd", "/etc/init.d/keepalived-vrrp reload",
+		"command for reload vrrp keepalived process")
 	debug = flag.Bool("debug", false, "debug for file comparison")
 
 	flag.Parse()
@@ -100,6 +114,11 @@ func main() {
 		router.HandleFunc("/add_vrrp/{iface}/", onslaveAddVrrp)
 		router.HandleFunc("/remove_vrrp/{iface}/", onslaveRemoveVrrp)
 		router.HandleFunc("/reload_vrrp/", onslaveReloadVrrp)
+		router.HandleFunc("/sync_group_reload_vrrp/", onslaveSyncGroupAndReload)
+		router.HandleFunc("/check_vrrp_script_exists/{name}/", onslaveCheckVrrpScriptExists)
+		router.HandleFunc("/check_vrrp_script_ok/{name}/", onslaveCheckVrrpScriptOk)
+		router.HandleFunc("/add_vrrp_script/{name}/", onslaveAddVrrpScript)
+		router.HandleFunc("/remove_vrrp_script/{name}/", onslaveRemoveVrrpScript)
 
 		loggedRouter := handlers.CombinedLoggingHandler(accessLog, router)
 
@@ -107,10 +126,12 @@ func main() {
 			if (*cert == "") || (*key == "") {
 				log.Fatalf("HTTPS true but no cert and key defined")
 			} else {
-				log.Fatal(http.ListenAndServeTLS(strings.Join([]string{*listenIPSlave, ":", *listenPortSlave}, ""), *cert, *key, loggedRouter))
+				log.Fatal(http.ListenAndServeTLS(strings.Join(
+					[]string{*listenIPSlave, ":", *listenPortSlave}, ""), *cert, *key, loggedRouter))
 			}
 		} else {
-			log.Fatal(http.ListenAndServe(strings.Join([]string{*listenIPSlave, ":", *listenPortSlave}, ""), loggedRouter))
+			log.Fatal(http.ListenAndServe(strings.Join(
+				[]string{*listenIPSlave, ":", *listenPortSlave}, ""), loggedRouter))
 		}
 	} else {
 		router.HandleFunc("/add_iface_vrrp/{iface}/", addIfaceVrrp)
@@ -118,6 +139,10 @@ func main() {
 		router.HandleFunc("/check_iface_vrrp/{iface}/", checkIfaceVrrp)
 		router.HandleFunc("/change_iface_vrrp/{iface}/", changeIfaceVrrp)
 		router.HandleFunc("/moveid_iface_vrrp/{iface}/{old_Id_vrrp}/", moveIDIfaceVrrp)
+		router.HandleFunc("/add_vrrp_script/{name}/", addVrrpScript)
+		router.HandleFunc("/remove_vrrp_script/{name}/", removeVrrpScript)
+		router.HandleFunc("/check_vrrp_script/{name}/", checkVrrpScript)
+		router.HandleFunc("/change_vrrp_script/{name}/", changeVrrpScript)
 
 		loggedRouter := handlers.CombinedLoggingHandler(accessLog, router)
 
@@ -125,7 +150,8 @@ func main() {
 			if (*cert == "") || (*key == "") {
 				log.Fatalf("HTTPS true but no cert and key defined")
 			} else {
-				log.Fatal(http.ListenAndServeTLS(strings.Join([]string{*listenIP, ":", *listenPort}, ""), *cert, *key, loggedRouter))
+				log.Fatal(http.ListenAndServeTLS(strings.Join(
+					[]string{*listenIP, ":", *listenPort}, ""), *cert, *key, loggedRouter))
 			}
 		} else {
 			log.Fatal(http.ListenAndServe(strings.Join([]string{*listenIP, ":", *listenPort}, ""), loggedRouter))

@@ -31,8 +31,8 @@ func checkVlanCom(ifaceVrrp ifaceVrrpType) error {
 	return nil
 }
 
-//jsonDataValidate : validate missing or incompatibility parameters
-func jsonDataValidate(ifaceVrrp ifaceVrrpType) string {
+//validate missing or incompatibility parameters
+func (ifaceVrrp ifaceVrrpType) validate() string {
 	if !ifaceVrrp.IPVipOnly && len(ifaceVrrp.IPVip) != 0 {
 		if ifaceVrrp.IPMaster == "" {
 			return "missing IP_master"
@@ -95,7 +95,8 @@ func jsonDataValidate(ifaceVrrp ifaceVrrpType) string {
 			return "missing Prio_slave for VIP"
 		}
 	}
-	if ((ifaceVrrp.AuthType != "") && (ifaceVrrp.AuthPass == "")) || ((ifaceVrrp.AuthPass != "") && (ifaceVrrp.AuthType == "")) {
+	if ((ifaceVrrp.AuthType != "") && (ifaceVrrp.AuthPass == "")) ||
+		((ifaceVrrp.AuthPass != "") && (ifaceVrrp.AuthType == "")) {
 		return "missing Auth_type or Auth_pass"
 	}
 	return ""
@@ -129,7 +130,7 @@ func addIfaceVrrp(w http.ResponseWriter, r *http.Request) {
 	sort.Strings(ifaceVrrp.IPVip)
 	sort.Strings(ifaceVrrp.PostUp)
 
-	validate := jsonDataValidate(ifaceVrrp)
+	validate := ifaceVrrp.validate()
 	if validate != "" {
 		w.WriteHeader(http.StatusBadRequest)
 		fmt.Fprintln(w, validate)
@@ -222,105 +223,97 @@ func addIfaceVrrp(w http.ResponseWriter, r *http.Request) {
 	// vrrp configuration
 	if len(ifaceVrrp.IPVip) != 0 {
 		mutex.Lock()
-		vrrpExistsMaster := checkVrrpExists(ifaceVrrp)
-		if vrrpExistsMaster {
-			vrrpOkMaster, err := checkVrrpOk(ifaceVrrp)
-			if err != nil {
-				http.Error(w, err.Error(), 500)
-				mutex.Unlock()
-				return
-			}
-			if !vrrpOkMaster {
-				w.WriteHeader(http.StatusBadRequest)
-				fmt.Fprintln(w, "vrrp already exist on master with different config")
-				mutex.Unlock()
-				return
-			}
-			err = reloadVrrp()
-			if err != nil {
-				http.Error(w, err.Error(), 500)
-				mutex.Unlock()
-				return
-			}
-		} else {
-			err := addVrrp(ifaceVrrp)
-			if err != nil {
-				http.Error(w, err.Error(), 500)
-				mutex.Unlock()
-				return
-			}
-			err = reloadVrrp()
-			if err != nil {
-				http.Error(w, err.Error(), 500)
-				mutex.Unlock()
-				return
-			}
-			// reload twice for vmac up before add IP (bug keepalived)
-			if ifaceVrrp.UseVmac {
-				sleep()
-				err = reloadVrrp()
-				if err != nil {
-					http.Error(w, err.Error(), 500)
-					mutex.Unlock()
-					return
-				}
-			}
-		}
+		addIfaceVrrpKeepalived(ifaceVrrp, true, w)
 		sleep()
 
-		vrrpExistsSlave, err := checkVrrpSlaveExists(ifaceVrrp)
+		addIfaceVrrpKeepalived(ifaceVrrp, false, w)
+		sleep()
+
+		mutex.Unlock()
+	}
+}
+
+func addIfaceVrrpKeepalived(ifaceVrrp ifaceVrrpType, master bool, w http.ResponseWriter) {
+	var err error
+	var vrrpExists bool
+	if master {
+		vrrpExists = checkVrrpExists(ifaceVrrp)
+	} else {
+		vrrpExists, err = checkVrrpSlaveExists(ifaceVrrp)
 		if err != nil {
 			http.Error(w, err.Error(), 500)
 			mutex.Unlock()
 			return
 		}
-		if vrrpExistsSlave {
-			vrrpOkSlave, err := checkVrrpSlaveOk(ifaceVrrp)
-			if err != nil {
-				http.Error(w, err.Error(), 500)
-				mutex.Unlock()
-				return
-			}
-			if !vrrpOkSlave {
-				w.WriteHeader(http.StatusBadRequest)
-				fmt.Fprintln(w, "vrrp already exist on slave with different config")
-				mutex.Unlock()
-				return
-			}
-			err = reloadVrrpSlave()
-			if err != nil {
-				http.Error(w, err.Error(), 500)
-				mutex.Unlock()
-				return
-			}
-		} else {
-			err := addVrrpSlave(ifaceVrrp)
-			if err != nil {
-				http.Error(w, err.Error(), 500)
-				mutex.Unlock()
-				return
-			}
-			err = reloadVrrpSlave()
-			if err != nil {
-				http.Error(w, err.Error(), 500)
-				mutex.Unlock()
-				return
-			}
-			// reload twice for vmac up before add IP (bug keepalived)
-			if ifaceVrrp.UseVmac {
-				sleep()
-				err = reloadVrrpSlave()
-				if err != nil {
-					http.Error(w, err.Error(), 500)
-					mutex.Unlock()
-					return
-				}
-			}
-		}
-		sleep()
-		mutex.Unlock()
 	}
+	if vrrpExists {
+		var vrrpOk bool
+		if master {
+			vrrpOk, err = checkVrrpOk(ifaceVrrp)
+		} else {
+			vrrpOk, err = checkVrrpSlaveOk(ifaceVrrp)
+		}
+		if err != nil {
+			http.Error(w, err.Error(), 500)
+			mutex.Unlock()
+			return
+		}
+		if !vrrpOk {
+			w.WriteHeader(http.StatusBadRequest)
+			if master {
+				fmt.Fprintln(w, "vrrp already exist on master with different config")
+			} else {
+				fmt.Fprintln(w, "vrrp already exist on slave with different config")
+			}
+			mutex.Unlock()
+			return
+		}
+		if master {
+			err = syncGroupAndReload()
+		} else {
+			err = syncGroupAndReloadSlave()
+		}
+		if err != nil {
+			http.Error(w, err.Error(), 500)
+			mutex.Unlock()
+			return
+		}
+	} else {
+		if master {
+			err = addVrrp(ifaceVrrp)
+		} else {
+			err = addVrrpSlave(ifaceVrrp)
+		}
+		if err != nil {
+			http.Error(w, err.Error(), 500)
+			mutex.Unlock()
+			return
+		}
+		if master {
+			err = reloadVrrp()
+		} else {
+			err = reloadVrrpSlave()
+		}
+		if err != nil {
+			http.Error(w, err.Error(), 500)
+			mutex.Unlock()
+			return
+		}
 
+		// reload twice for vmac up before add IP (bug keepalived)
+		// reload twice for new vrrp comme up
+		sleep()
+		if master {
+			err = syncGroupAndReload()
+		} else {
+			err = syncGroupAndReloadSlave()
+		}
+		if err != nil {
+			http.Error(w, err.Error(), 500)
+			mutex.Unlock()
+			return
+		}
+	}
 }
 
 // removeIfaceVrrp on master API for remove all configuration (network + vrrp) on master & slave server
@@ -351,7 +344,7 @@ func removeIfaceVrrp(w http.ResponseWriter, r *http.Request) {
 	sort.Strings(ifaceVrrp.IPVip)
 	sort.Strings(ifaceVrrp.PostUp)
 
-	validate := jsonDataValidate(ifaceVrrp)
+	validate := ifaceVrrp.validate()
 	if validate != "" {
 		w.WriteHeader(http.StatusBadRequest)
 		fmt.Fprintln(w, validate)
@@ -373,14 +366,14 @@ func removeIfaceVrrp(w http.ResponseWriter, r *http.Request) {
 				mutex.Unlock()
 				return
 			}
-			err = reloadVrrpSlave()
+			err = syncGroupAndReloadSlave()
 			if err != nil {
 				http.Error(w, err.Error(), 500)
 				mutex.Unlock()
 				return
 			}
 		} else {
-			err := reloadVrrpSlave()
+			err := syncGroupAndReloadSlave()
 			if err != nil {
 				http.Error(w, err.Error(), 500)
 				mutex.Unlock()
@@ -397,14 +390,14 @@ func removeIfaceVrrp(w http.ResponseWriter, r *http.Request) {
 				mutex.Unlock()
 				return
 			}
-			err = reloadVrrp()
+			err = syncGroupAndReload()
 			if err != nil {
 				http.Error(w, err.Error(), 500)
 				mutex.Unlock()
 				return
 			}
 		} else {
-			err := reloadVrrp()
+			err := syncGroupAndReload()
 			if err != nil {
 				http.Error(w, err.Error(), 500)
 				mutex.Unlock()
@@ -468,7 +461,7 @@ func checkIfaceVrrp(w http.ResponseWriter, r *http.Request) {
 	sort.Strings(ifaceVrrp.IPVip)
 	sort.Strings(ifaceVrrp.PostUp)
 
-	validate := jsonDataValidate(ifaceVrrp)
+	validate := ifaceVrrp.validate()
 	if validate != "" {
 		w.WriteHeader(http.StatusBadRequest)
 		fmt.Fprintln(w, validate)
@@ -615,7 +608,6 @@ func checkIfaceVrrp(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), 500)
 		return
 	}
-
 }
 
 // changeIfaceVrrp on master API for change configuration needed (network + vrrp) on master & slave server
@@ -645,7 +637,7 @@ func changeIfaceVrrp(w http.ResponseWriter, r *http.Request) {
 	sort.Strings(ifaceVrrp.IPVip)
 	sort.Strings(ifaceVrrp.PostUp)
 
-	validate := jsonDataValidate(ifaceVrrp)
+	validate := ifaceVrrp.validate()
 	if validate != "" {
 		w.WriteHeader(http.StatusBadRequest)
 		fmt.Fprintln(w, validate)
@@ -682,7 +674,8 @@ func changeIfaceVrrp(w http.ResponseWriter, r *http.Request) {
 			}
 			if !ifaceOkWithoutPostup {
 				w.WriteHeader(http.StatusBadRequest)
-				fmt.Fprintln(w, "[MASTER] Change IP_master, IP_slave, Mask, Default_GW, LACP_slaves_master, LACP_slaves_slave or Vlan_device isn't possible")
+				fmt.Fprintln(w, "[MASTER] Change IP_master, IP_slave, Mask, Default_GW,"+
+					" LACP_slaves_master, LACP_slaves_slave or Vlan_device isn't possible")
 				return
 			}
 			err = changeIfacePostup(ifaceVrrp)
@@ -714,7 +707,8 @@ func changeIfaceVrrp(w http.ResponseWriter, r *http.Request) {
 			}
 			if !ifaceOkWithoutPostup {
 				w.WriteHeader(http.StatusBadRequest)
-				fmt.Fprintln(w, "[SLAVE] Change IP_master, IP_slave, Mask, Default_GW, LACP_slaves_master, LACP_slaves_slave or Vlan_device isn't possible")
+				fmt.Fprintln(w, "[SLAVE] Change IP_master, IP_slave, Mask, Default_GW,"+
+					" LACP_slaves_master, LACP_slaves_slave or Vlan_device isn't possible")
 				return
 			}
 			err = changeIfaceSlavePostup(ifaceVrrp)
@@ -814,14 +808,14 @@ func changeIfaceVrrp(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 			// reload twice for vmac up before add IP (bug keepalived)
-			if ifaceVrrp.UseVmac {
-				sleep()
-				err = reloadVrrp()
-				if err != nil {
-					http.Error(w, err.Error(), 500)
-					mutex.Unlock()
-					return
-				}
+			// reload twice for new vrrp comme up
+
+			sleep()
+			err = syncGroupAndReload()
+			if err != nil {
+				http.Error(w, err.Error(), 500)
+				mutex.Unlock()
+				return
 			}
 			sleep()
 
@@ -839,7 +833,7 @@ func changeIfaceVrrp(w http.ResponseWriter, r *http.Request) {
 					mutex.Unlock()
 					return
 				}
-				err = reloadVrrpSlave()
+				err = syncGroupAndReloadSlave()
 				if err != nil {
 					http.Error(w, err.Error(), 500)
 					mutex.Unlock()
@@ -848,7 +842,7 @@ func changeIfaceVrrp(w http.ResponseWriter, r *http.Request) {
 				// reload twice for vmac up before add IP (bug keepalived)
 				if ifaceVrrp.UseVmac {
 					sleep()
-					err = reloadVrrpSlave()
+					err = syncGroupAndReloadSlave()
 					if err != nil {
 						http.Error(w, err.Error(), 500)
 						mutex.Unlock()
@@ -858,7 +852,6 @@ func changeIfaceVrrp(w http.ResponseWriter, r *http.Request) {
 				sleep()
 			}
 			mutex.Unlock()
-
 		} else if !vrrpOkSlave {
 			mutex.Lock()
 			if ifaceVrrpRmSlave.VrrpGroup != "" {
@@ -875,7 +868,7 @@ func changeIfaceVrrp(w http.ResponseWriter, r *http.Request) {
 				mutex.Unlock()
 				return
 			}
-			err = reloadVrrpSlave()
+			err = syncGroupAndReloadSlave()
 			if err != nil {
 				http.Error(w, err.Error(), 500)
 				mutex.Unlock()
@@ -884,7 +877,7 @@ func changeIfaceVrrp(w http.ResponseWriter, r *http.Request) {
 			// reload twice for vmac up before add IP (bug keepalived)
 			if ifaceVrrp.UseVmac {
 				sleep()
-				err = reloadVrrpSlave()
+				err = syncGroupAndReloadSlave()
 				if err != nil {
 					http.Error(w, err.Error(), 500)
 					mutex.Unlock()
@@ -909,7 +902,7 @@ func changeIfaceVrrp(w http.ResponseWriter, r *http.Request) {
 				mutex.Unlock()
 				return
 			}
-			err = reloadVrrpSlave()
+			err = syncGroupAndReloadSlave()
 			if err != nil {
 				http.Error(w, err.Error(), 500)
 				mutex.Unlock()
@@ -926,7 +919,7 @@ func changeIfaceVrrp(w http.ResponseWriter, r *http.Request) {
 				mutex.Unlock()
 				return
 			}
-			err = reloadVrrp()
+			err = syncGroupAndReload()
 			if err != nil {
 				http.Error(w, err.Error(), 500)
 				mutex.Unlock()
@@ -966,7 +959,7 @@ func moveIDIfaceVrrp(w http.ResponseWriter, r *http.Request) {
 	sort.Strings(ifaceVrrp.IPVip)
 	sort.Strings(ifaceVrrp.PostUp)
 
-	validate := jsonDataValidate(ifaceVrrp)
+	validate := ifaceVrrp.validate()
 	if validate != "" {
 		w.WriteHeader(http.StatusBadRequest)
 		fmt.Fprintln(w, validate)
@@ -1005,7 +998,7 @@ func moveIDIfaceVrrp(w http.ResponseWriter, r *http.Request) {
 							mutex.Unlock()
 							return
 						}
-						err = reloadVrrpSlave()
+						err = syncGroupAndReloadSlave()
 						if err != nil {
 							http.Error(w, err.Error(), 500)
 							mutex.Unlock()
@@ -1032,14 +1025,13 @@ func moveIDIfaceVrrp(w http.ResponseWriter, r *http.Request) {
 							return
 						}
 						// reload twice for vmac up before add IP (bug keepalived)
-						if ifaceVrrp.UseVmac {
-							sleep()
-							err = reloadVrrp()
-							if err != nil {
-								http.Error(w, err.Error(), 500)
-								mutex.Unlock()
-								return
-							}
+						// reload twice for new vrrp comme up
+						sleep()
+						err = syncGroupAndReload()
+						if err != nil {
+							http.Error(w, err.Error(), 500)
+							mutex.Unlock()
+							return
 						}
 						sleep()
 
@@ -1049,7 +1041,7 @@ func moveIDIfaceVrrp(w http.ResponseWriter, r *http.Request) {
 							mutex.Unlock()
 							return
 						}
-						err = reloadVrrpSlave()
+						err = syncGroupAndReloadSlave()
 						if err != nil {
 							http.Error(w, err.Error(), 500)
 							mutex.Unlock()
@@ -1058,7 +1050,7 @@ func moveIDIfaceVrrp(w http.ResponseWriter, r *http.Request) {
 						// reload twice for vmac up before add IP (bug keepalived)
 						if ifaceVrrp.UseVmac {
 							sleep()
-							err = reloadVrrpSlave()
+							err = syncGroupAndReloadSlave()
 							if err != nil {
 								http.Error(w, err.Error(), 500)
 								mutex.Unlock()
@@ -1085,7 +1077,6 @@ func moveIDIfaceVrrp(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(http.StatusBadRequest)
 				fmt.Fprintln(w, "different vrrp on master => you can't change Id_vrrp and others options at the same time")
 				return
-
 			}
 		} else {
 			mutex.Unlock()
@@ -1093,10 +1084,354 @@ func moveIDIfaceVrrp(w http.ResponseWriter, r *http.Request) {
 			fmt.Fprintln(w, "unknown old vrrp id on master")
 			return
 		}
-
 	} else {
 		w.WriteHeader(http.StatusBadRequest)
 		fmt.Fprintln(w, "IP_vip empty, no move needed")
 		return
 	}
+}
+
+// add vrrp script file and reload keepalived on master and slave
+func addVrrpScript(w http.ResponseWriter, r *http.Request) {
+	if *htpasswdfile != "" {
+		htpasswd := auth.HtpasswdFileProvider(*htpasswdfile)
+		authenticator := auth.BasicAuth{
+			Realm:   "Basic Realm",
+			Secrets: htpasswd,
+		}
+		usercheck := authenticator.CheckAuth(r)
+		if usercheck == "" {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+	}
+
+	var vrrpScript vrrpScriptType
+	vars := mux.Vars(r)
+	dec := json.NewDecoder(r.Body)
+	err := dec.Decode(&vrrpScript)
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+
+	if vrrpScript.Name != vars["name"] {
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprintln(w, "name in url and json are not same")
+		return
+	}
+
+	validate := vrrpScript.validate()
+	if validate != "" {
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprintln(w, validate)
+		return
+	}
+	mutex.Lock()
+	if checkVrrpScriptExists(vrrpScript.Name) {
+		vrrpScriptOk, err := checkVrrpScriptOk(vrrpScript)
+		if err != nil {
+			mutex.Unlock()
+			http.Error(w, err.Error(), 500)
+			return
+		}
+		if !vrrpScriptOk {
+			mutex.Unlock()
+			w.WriteHeader(http.StatusBadRequest)
+			fmt.Fprintln(w, "vrrp_script already exist on master with different config")
+		}
+	} else {
+		err := addVrrpScriptFile(vrrpScript)
+		if err != nil {
+			mutex.Unlock()
+			http.Error(w, err.Error(), 500)
+			return
+		}
+		err = reloadVrrp()
+		if err != nil {
+			mutex.Unlock()
+			http.Error(w, err.Error(), 500)
+			return
+		}
+		sleep()
+	}
+	vrrpScriptSlaveExists, err := checkVrrpScriptExistsSlave(vrrpScript)
+	if err != nil {
+		mutex.Unlock()
+		http.Error(w, err.Error(), 500)
+		return
+	}
+	if vrrpScriptSlaveExists {
+		vrrpScriptOk, err := vrrpScriptOkSlave(vrrpScript)
+		if err != nil {
+			mutex.Unlock()
+			http.Error(w, err.Error(), 500)
+			return
+		}
+		if !vrrpScriptOk {
+			mutex.Unlock()
+			w.WriteHeader(http.StatusBadRequest)
+			fmt.Fprintln(w, "vrrp_script already exist on slave with different config")
+			return
+		}
+	} else {
+		err := addVrrpScriptSlave(vrrpScript)
+		if err != nil {
+			mutex.Unlock()
+			http.Error(w, err.Error(), 500)
+			return
+		}
+		err = reloadVrrpSlave()
+		if err != nil {
+			mutex.Unlock()
+			http.Error(w, err.Error(), 500)
+			return
+		}
+		sleep()
+	}
+	mutex.Unlock()
+}
+
+// remove vrrp script file and reload keepalived on master and slave
+func removeVrrpScript(w http.ResponseWriter, r *http.Request) {
+	if *htpasswdfile != "" {
+		htpasswd := auth.HtpasswdFileProvider(*htpasswdfile)
+		authenticator := auth.BasicAuth{
+			Realm:   "Basic Realm",
+			Secrets: htpasswd,
+		}
+		usercheck := authenticator.CheckAuth(r)
+		if usercheck == "" {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+	}
+
+	var vrrpScript vrrpScriptType
+	dec := json.NewDecoder(r.Body)
+	err := dec.Decode(&vrrpScript)
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+	mutex.Lock()
+	if checkVrrpScriptExists(vrrpScript.Name) {
+		err := removeVrrpScriptFile(vrrpScript)
+		if err != nil {
+			mutex.Unlock()
+			http.Error(w, err.Error(), 500)
+			return
+		}
+		err = reloadVrrp()
+		if err != nil {
+			mutex.Unlock()
+			http.Error(w, err.Error(), 500)
+			return
+		}
+		sleep()
+	} else {
+		err = reloadVrrp()
+		if err != nil {
+			mutex.Unlock()
+			http.Error(w, err.Error(), 500)
+			return
+		}
+		sleep()
+	}
+	vrrpScriptSlaveExists, err := checkVrrpScriptExistsSlave(vrrpScript)
+	if err != nil {
+		mutex.Unlock()
+		http.Error(w, err.Error(), 500)
+		return
+	}
+	if vrrpScriptSlaveExists {
+		err := removeVrrpScriptSlave(vrrpScript)
+		if err != nil {
+			mutex.Unlock()
+			http.Error(w, err.Error(), 500)
+			return
+		}
+		err = reloadVrrpSlave()
+		if err != nil {
+			mutex.Unlock()
+			http.Error(w, err.Error(), 500)
+			return
+		}
+		sleep()
+	} else {
+		err = reloadVrrpSlave()
+		if err != nil {
+			mutex.Unlock()
+			http.Error(w, err.Error(), 500)
+			return
+		}
+		sleep()
+	}
+	mutex.Unlock()
+}
+func changeVrrpScript(w http.ResponseWriter, r *http.Request) {
+	if *htpasswdfile != "" {
+		htpasswd := auth.HtpasswdFileProvider(*htpasswdfile)
+		authenticator := auth.NewBasicAuthenticator("Basic Realm", htpasswd)
+		usercheck := authenticator.CheckAuth(r)
+		if usercheck == "" {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+	}
+	var vrrpScript vrrpScriptType
+	vars := mux.Vars(r)
+	dec := json.NewDecoder(r.Body)
+	err := dec.Decode(&vrrpScript)
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+	if vrrpScript.Name != vars["name"] {
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprintln(w, "name in url and json are not same")
+		return
+	}
+
+	validate := vrrpScript.validate()
+	if validate != "" {
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprintln(w, validate)
+		return
+	}
+	mutex.Lock()
+	if checkVrrpScriptExists(vrrpScript.Name) {
+		err = removeVrrpScriptFile(vrrpScript)
+		if err != nil {
+			mutex.Unlock()
+			http.Error(w, err.Error(), 500)
+			return
+		}
+	}
+	err = addVrrpScriptFile(vrrpScript)
+	if err != nil {
+		mutex.Unlock()
+		http.Error(w, err.Error(), 500)
+		return
+	}
+	err = reloadVrrp()
+	if err != nil {
+		mutex.Unlock()
+		http.Error(w, err.Error(), 500)
+		return
+	}
+	sleep()
+
+	vrrpScriptSlaveExists, err := checkVrrpScriptExistsSlave(vrrpScript)
+	if err != nil {
+		mutex.Unlock()
+		http.Error(w, err.Error(), 500)
+		return
+	}
+	if vrrpScriptSlaveExists {
+		err = removeVrrpScriptSlave(vrrpScript)
+		if err != nil {
+			mutex.Unlock()
+			http.Error(w, err.Error(), 500)
+			return
+		}
+	}
+	err = addVrrpScriptSlave(vrrpScript)
+	if err != nil {
+		mutex.Unlock()
+		http.Error(w, err.Error(), 500)
+		return
+	}
+	err = reloadVrrpSlave()
+	if err != nil {
+		mutex.Unlock()
+		http.Error(w, err.Error(), 500)
+		return
+	}
+	sleep()
+	mutex.Unlock()
+}
+
+// read vrrp file on master and check if same on slave
+func checkVrrpScript(w http.ResponseWriter, r *http.Request) {
+	if *htpasswdfile != "" {
+		htpasswd := auth.HtpasswdFileProvider(*htpasswdfile)
+		authenticator := auth.BasicAuth{
+			Realm:   "Basic Realm",
+			Secrets: htpasswd,
+		}
+		usercheck := authenticator.CheckAuth(r)
+		if usercheck == "" {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+	}
+	vars := mux.Vars(r)
+	var vrrpScriptRead vrrpScriptType
+	var err error
+	if checkVrrpScriptExists(vars["name"]) {
+		vrrpScriptRead, err = readVrrpScriptFile(vars["name"])
+		if err != nil {
+			http.Error(w, err.Error(), 500)
+			return
+		}
+	} else {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	vrrpScriptSlaveExists, err := checkVrrpScriptExistsSlave(vrrpScriptType{
+		Name: vars["name"],
+	})
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+	if !vrrpScriptSlaveExists {
+		http.Error(w, "script exists on master but not find on slave", 500)
+	} else {
+		vrrpScriptOk, err := vrrpScriptOkSlave(vrrpScriptRead)
+		if err != nil {
+			http.Error(w, err.Error(), 500)
+			return
+		}
+		if !vrrpScriptOk {
+			http.Error(w, "script master/slave not same", 500)
+			return
+		}
+	}
+	js, err := json.Marshal(vrrpScriptRead)
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	_, err = w.Write(js)
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+}
+
+// check vrrpScriptType parameters
+func (vrrpScript vrrpScriptType) validate() string {
+	if vrrpScript.Interval < 1 {
+		return "interval too small"
+	}
+	if vrrpScript.Timeout > vrrpScript.Interval {
+		return "timeout too long with this interval"
+	}
+	if vrrpScript.Weight < -253 || vrrpScript.Weight > 253 {
+		return "weight is not in valid range"
+	}
+	if vrrpScript.Script == "" {
+		return "missing script"
+	}
+	if vrrpScript.Fall < 1 {
+		return "fall too small"
+	}
+	if vrrpScript.Rise < 1 {
+		return "fall too small"
+	}
+	return ""
 }

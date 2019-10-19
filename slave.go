@@ -47,7 +47,8 @@ func onslaveCheckIfaceOk(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// onslaveCheckIfaceOk : request received on slave for check network config file without PostUp parameter => checkIfaceWithoutPostup()
+// onslaveCheckIfaceOk : request received on slave for
+//   check network config file without PostUp parameter => checkIfaceWithoutPostup()
 func onslaveCheckIfaceWithoutPostup(w http.ResponseWriter, r *http.Request) {
 	var IfaceVrrp ifaceVrrpType
 	dec := json.NewDecoder(r.Body)
@@ -140,7 +141,8 @@ func onslaveRemoveIfaceFile(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// onslaveChangeIfacePostup : request received on slave for rewrite post-up line and apply/revert modification => changeIfacePostup()
+// onslaveChangeIfacePostup : request received on slave for
+//   rewrite post-up line and apply/revert modification => changeIfacePostup()
 func onslaveChangeIfacePostup(w http.ResponseWriter, r *http.Request) {
 	var IfaceVrrp ifaceVrrpType
 	dec := json.NewDecoder(r.Body)
@@ -156,7 +158,6 @@ func onslaveChangeIfacePostup(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), 500)
 		return
 	}
-
 }
 
 // onslaveCheckVrrpExists : request received on slave for check vrrp config file exists => checkVrrpExists()
@@ -177,7 +178,8 @@ func onslaveCheckVrrpExists(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// onslaveCheckVrrpExistsOtherVG : request received on slave for check vrrp config file exists in other VG (in json) => checkVrrpExistsOtherVG()
+// onslaveCheckVrrpExistsOtherVG : request received on slave for
+//   check vrrp config file exists in other VG (in json) => checkVrrpExistsOtherVG()
 func onslaveCheckVrrpExistsOtherVG(w http.ResponseWriter, r *http.Request) {
 	var IfaceVrrp ifaceVrrpType
 	dec := json.NewDecoder(r.Body)
@@ -221,7 +223,8 @@ func onslaveCheckVrrpOk(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// onslaveCheckVrrpWithoutSync : request received on slave for check vrrp config file without interface line => checkVrrpWithoutSync()
+// onslaveCheckVrrpWithoutSync : request received on slave for
+//   check vrrp config file without interface line => checkVrrpWithoutSync()
 func onslaveCheckVrrpWithoutSync(w http.ResponseWriter, r *http.Request) {
 	var IfaceVrrp ifaceVrrpType
 	dec := json.NewDecoder(r.Body)
@@ -242,7 +245,16 @@ func onslaveCheckVrrpWithoutSync(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// onslaveCheckVrrpWithoutSync : request received on slave for reload keepalived service => reloadVrrp()
+// onslaveSyncGroupAndReload : request received on slave for
+//   generate vrrp_sync_group and reload keepalived service => reloadVrrp()
+func onslaveSyncGroupAndReload(w http.ResponseWriter, r *http.Request) {
+	err := syncGroupAndReload()
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+	}
+}
+
+// onslaveReloadVrrp : request received on slave for reload keepalived service => reloadVrrp()
 func onslaveReloadVrrp(w http.ResponseWriter, r *http.Request) {
 	err := reloadVrrp()
 	if err != nil {
@@ -279,6 +291,71 @@ func onslaveRemoveVrrp(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	IfaceVrrp.Iface = vars["iface"]
 	err = removeVrrp(IfaceVrrp)
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+	}
+}
+
+// onslaveCheckVrrpScriptExists : request received on slave for checkVrrpScriptExists()
+func onslaveCheckVrrpScriptExists(w http.ResponseWriter, r *http.Request) {
+	var vrrpScript vrrpScriptType
+	dec := json.NewDecoder(r.Body)
+	err := dec.Decode(&vrrpScript)
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+	vrrpScriptExists := checkVrrpScriptExists(vrrpScript.Name)
+	if !vrrpScriptExists {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+}
+
+// onslaveCheckVrrpScriptOk : request received on slave for checkVrrpScriptOk()
+func onslaveCheckVrrpScriptOk(w http.ResponseWriter, r *http.Request) {
+	var vrrpScript vrrpScriptType
+	dec := json.NewDecoder(r.Body)
+	err := dec.Decode(&vrrpScript)
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+	vrrpOk, err := checkVrrpScriptOk(vrrpScript)
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+	}
+	if !vrrpOk {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+}
+
+// onslaveAddVrrpScript : request received on slave for addVrrpScriptFile()
+func onslaveAddVrrpScript(w http.ResponseWriter, r *http.Request) {
+	var vrrpScript vrrpScriptType
+	dec := json.NewDecoder(r.Body)
+	err := dec.Decode(&vrrpScript)
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+	err = addVrrpScriptFile(vrrpScript)
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+	}
+}
+
+// onslaveRemoveVrrpScript : request received on slave for removeVrrpScriptFile()
+func onslaveRemoveVrrpScript(w http.ResponseWriter, r *http.Request) {
+	var vrrpScript vrrpScriptType
+	dec := json.NewDecoder(r.Body)
+	err := dec.Decode(&vrrpScript)
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+	err = removeVrrpScriptFile(vrrpScript)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
 	}
