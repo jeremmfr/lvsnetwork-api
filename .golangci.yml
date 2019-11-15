@@ -11,9 +11,6 @@ linters-settings:
     min-complexity: 70
 issues:
   exclude-rules:
-    - text: "G402: TLS InsecureSkipVerify set true"
-      linters:
-        - gosec
     - text: "G204: Subprocess launched with function call as argument or cmd arguments"
       linters:
         - gosec
