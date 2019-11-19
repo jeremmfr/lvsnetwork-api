@@ -2,7 +2,6 @@
 ![GitHub release (latest by date)](https://img.shields.io/github/v/release/jeremmfr/lvsnetwork-api)
 [![Go Status](https://github.com/jeremmfr/lvsnetwork-api/workflows/Go%20Tests/badge.svg)](https://github.com/jeremmfr/lvsnetwork-api/actions)
 [![Lint Status](https://github.com/jeremmfr/lvsnetwork-api/workflows/GolangCI-Lint/badge.svg)](https://github.com/jeremmfr/lvsnetwork-api/actions)
-[![GoDoc](https://godoc.org/github.com/jeremmfr/lvsnetwork-api?status.svg)](https://godoc.org/github.com/jeremmfr/lvsnetwork-api)
 [![Go Report Card](https://goreportcard.com/badge/github.com/jeremmfr/lvsnetwork-api)](https://goreportcard.com/report/github.com/jeremmfr/lvsnetwork-api)
 
 Create API REST for create/configure network interface and keepalived VRRP configuration
