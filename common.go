@@ -503,8 +503,10 @@ func syncGroupAndReload() error {
 					return fmt.Errorf("read file %v error", file)
 				}
 				vrrpFileWords := strings.Fields(vrrpFile)
-				if vrrpFileWords[0] == "vrrp_instance" {
-					instances = append(instances, vrrpFileWords[1])
+				if len(vrrpFileWords) > 0 {
+					if vrrpFileWords[0] == "vrrp_instance" {
+						instances = append(instances, vrrpFileWords[1])
+					}
 				}
 			}
 			if len(instances) == 0 {
