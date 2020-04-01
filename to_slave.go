@@ -26,17 +26,17 @@ func requestSlave(url string, jsonBody interface{}) (int, string, error) {
 	body := new(bytes.Buffer)
 	err := json.NewEncoder(body).Encode(jsonBody)
 	if err != nil {
-		return 500, "", err
+		return http.StatusInternalServerError, "", err
 	}
 	client := &http.Client{Transport: tr}
 	resp, err := client.Post(urlString, "application/json; charset=utf-8", body)
 	if err != nil {
-		return 500, "", err
+		return http.StatusInternalServerError, "", err
 	}
 	defer resp.Body.Close()
 	respBody, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return 500, "", err
+		return http.StatusInternalServerError, "", err
 	}
 	return resp.StatusCode, string(respBody), err
 }
@@ -57,12 +57,12 @@ func requestSlaveWithoutBody(url string) (int, string, error) {
 	client := &http.Client{Transport: tr}
 	resp, err := client.Get(urlString)
 	if err != nil {
-		return 500, "", err
+		return http.StatusInternalServerError, "", err
 	}
 	defer resp.Body.Close()
 	respBody, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return 500, "", err
+		return http.StatusInternalServerError, "", err
 	}
 	return resp.StatusCode, string(respBody), err
 }
@@ -71,13 +71,13 @@ func requestSlaveWithoutBody(url string) (int, string, error) {
 func checkIfaceSlaveExists(ifaceVrrp ifaceVrrpType) (bool, error) {
 	statuscode, body, err := requestSlave(strings.Join([]string{"/check_iface_exists/",
 		ifaceVrrp.Iface, "/"}, ""), ifaceVrrp)
-	if (err != nil) || (statuscode == 500) {
+	if (err != nil) || (statuscode == http.StatusInternalServerError) {
 		return false, err
 	}
-	if statuscode == 404 {
+	if statuscode == http.StatusNotFound {
 		return false, nil
 	}
-	if statuscode == 200 {
+	if statuscode == http.StatusOK {
 		return true, nil
 	}
 	return false, fmt.Errorf("error on slave => %v", body)
@@ -87,13 +87,13 @@ func checkIfaceSlaveExists(ifaceVrrp ifaceVrrpType) (bool, error) {
 func checkIfaceSlaveOk(ifaceVrrp ifaceVrrpType) (bool, error) {
 	statuscode, body, err := requestSlave(strings.Join([]string{"/check_iface_ok/",
 		ifaceVrrp.Iface, "/"}, ""), ifaceVrrp)
-	if (err != nil) || (statuscode == 500) {
+	if (err != nil) || (statuscode == http.StatusInternalServerError) {
 		return false, err
 	}
-	if statuscode == 404 {
+	if statuscode == http.StatusNotFound {
 		return false, nil
 	}
-	if statuscode == 200 {
+	if statuscode == http.StatusOK {
 		return true, nil
 	}
 	return false, fmt.Errorf("error on slave => %v", body)
@@ -103,13 +103,13 @@ func checkIfaceSlaveOk(ifaceVrrp ifaceVrrpType) (bool, error) {
 func checkIfaceSlaveWithoutPostup(ifaceVrrp ifaceVrrpType) (bool, error) {
 	statuscode, body, err := requestSlave(strings.Join([]string{"/check_iface_without_postup/",
 		ifaceVrrp.Iface, "/"}, ""), ifaceVrrp)
-	if (err != nil) || (statuscode == 500) {
+	if (err != nil) || (statuscode == http.StatusInternalServerError) {
 		return false, err
 	}
-	if statuscode == 404 {
+	if statuscode == http.StatusNotFound {
 		return false, nil
 	}
-	if statuscode == 200 {
+	if statuscode == http.StatusOK {
 		return true, nil
 	}
 	return false, fmt.Errorf("error on slave => %v", body)
@@ -121,7 +121,7 @@ func addIfaceSlave(ifaceVrrp ifaceVrrpType) error {
 	if err != nil {
 		return err
 	}
-	if statuscode == 200 {
+	if statuscode == http.StatusOK {
 		return nil
 	}
 	return fmt.Errorf("error on slave => %v", body)
@@ -134,7 +134,7 @@ func addIfaceSlaveFile(ifaceVrrp ifaceVrrpType) error {
 	if err != nil {
 		return err
 	}
-	if statuscode == 200 {
+	if statuscode == http.StatusOK {
 		return nil
 	}
 	return fmt.Errorf("error on slave => %v", body)
@@ -147,7 +147,7 @@ func removeIfaceSlave(ifaceVrrp ifaceVrrpType) error {
 	if err != nil {
 		return err
 	}
-	if statuscode == 200 {
+	if statuscode == http.StatusOK {
 		return nil
 	}
 	return fmt.Errorf("error on slave => %v", body)
@@ -160,7 +160,7 @@ func removeIfaceSlaveFile(ifaceVrrp ifaceVrrpType) error {
 	if err != nil {
 		return err
 	}
-	if statuscode == 200 {
+	if statuscode == http.StatusOK {
 		return nil
 	}
 	return fmt.Errorf("error on slave => %v", body)
@@ -173,7 +173,7 @@ func changeIfaceSlavePostup(ifaceVrrp ifaceVrrpType) error {
 	if err != nil {
 		return err
 	}
-	if statuscode == 200 {
+	if statuscode == http.StatusOK {
 		return nil
 	}
 	return fmt.Errorf("error on slave => %v", body)
@@ -183,13 +183,13 @@ func changeIfaceSlavePostup(ifaceVrrp ifaceVrrpType) error {
 func checkVrrpSlaveExists(ifaceVrrp ifaceVrrpType) (bool, error) {
 	statuscode, body, err := requestSlave(strings.Join([]string{"/check_vrrp_exists/",
 		ifaceVrrp.Iface, "/"}, ""), ifaceVrrp)
-	if (err != nil) || (statuscode == 500) {
+	if (err != nil) || (statuscode == http.StatusInternalServerError) {
 		return false, err
 	}
-	if statuscode == 404 {
+	if statuscode == http.StatusNotFound {
 		return false, nil
 	}
-	if statuscode == 200 {
+	if statuscode == http.StatusOK {
 		return true, nil
 	}
 	return false, fmt.Errorf("error on slave => %v", body)
@@ -199,13 +199,13 @@ func checkVrrpSlaveExists(ifaceVrrp ifaceVrrpType) (bool, error) {
 func checkVrrpSlaveExistsOtherVG(ifaceVrrp ifaceVrrpType) (string, error) {
 	statuscode, body, err := requestSlave(strings.Join([]string{"/check_vrrp_exists_otherVG/",
 		ifaceVrrp.Iface, "/"}, ""), ifaceVrrp)
-	if (err != nil) || (statuscode == 500) {
+	if (err != nil) || (statuscode == http.StatusInternalServerError) {
 		return "", err
 	}
-	if statuscode == 404 {
+	if statuscode == http.StatusNotFound {
 		return "", nil
 	}
-	if statuscode == 200 {
+	if statuscode == http.StatusOK {
 		return strings.Join(strings.Fields(body), ""), nil
 	}
 	return "", fmt.Errorf("error on slave => %v", body)
@@ -215,13 +215,13 @@ func checkVrrpSlaveExistsOtherVG(ifaceVrrp ifaceVrrpType) (string, error) {
 func checkVrrpSlaveOk(ifaceVrrp ifaceVrrpType) (bool, error) {
 	statuscode, body, err := requestSlave(strings.Join([]string{"/check_vrrp_ok/",
 		ifaceVrrp.Iface, "/"}, ""), ifaceVrrp)
-	if (err != nil) || (statuscode == 500) {
+	if (err != nil) || (statuscode == http.StatusInternalServerError) {
 		return false, err
 	}
-	if statuscode == 404 {
+	if statuscode == http.StatusNotFound {
 		return false, nil
 	}
-	if statuscode == 200 {
+	if statuscode == http.StatusOK {
 		return true, nil
 	}
 	return false, fmt.Errorf("error on slave => %v", body)
@@ -231,13 +231,13 @@ func checkVrrpSlaveOk(ifaceVrrp ifaceVrrpType) (bool, error) {
 func checkVrrpSlaveWithoutSync(ifaceVrrp ifaceVrrpType) (bool, error) {
 	statuscode, body, err := requestSlave(strings.Join([]string{"/check_vrrp_without_sync/",
 		ifaceVrrp.Iface, "/"}, ""), ifaceVrrp)
-	if (err != nil) || (statuscode == 500) {
+	if (err != nil) || (statuscode == http.StatusInternalServerError) {
 		return false, err
 	}
-	if statuscode == 404 {
+	if statuscode == http.StatusNotFound {
 		return false, nil
 	}
-	if statuscode == 200 {
+	if statuscode == http.StatusOK {
 		return true, nil
 	}
 	return false, fmt.Errorf("error on slave => %v", body)
@@ -249,7 +249,7 @@ func syncGroupAndReloadSlave() error {
 	if err != nil {
 		return err
 	}
-	if statuscode == 200 {
+	if statuscode == http.StatusOK {
 		return nil
 	}
 	return fmt.Errorf("error on slave => %v", body)
@@ -261,7 +261,7 @@ func reloadVrrpSlave() error {
 	if err != nil {
 		return err
 	}
-	if statuscode == 200 {
+	if statuscode == http.StatusOK {
 		return nil
 	}
 	return fmt.Errorf("error on slave => %v", body)
@@ -274,7 +274,7 @@ func addVrrpSlave(ifaceVrrp ifaceVrrpType) error {
 	if err != nil {
 		return err
 	}
-	if statuscode == 200 {
+	if statuscode == http.StatusOK {
 		return nil
 	}
 	return fmt.Errorf("error on slave => %v", body)
@@ -287,7 +287,7 @@ func removeVrrpSlave(ifaceVrrp ifaceVrrpType) error {
 	if err != nil {
 		return err
 	}
-	if statuscode == 200 {
+	if statuscode == http.StatusOK {
 		return nil
 	}
 	return fmt.Errorf("error on slave => %v", body)
@@ -297,13 +297,13 @@ func removeVrrpSlave(ifaceVrrp ifaceVrrpType) error {
 func checkVrrpScriptExistsSlave(vrrpScript vrrpScriptType) (bool, error) {
 	statuscode, body, err := requestSlave(strings.Join([]string{"/check_vrrp_script_exists/",
 		vrrpScript.Name, "/"}, ""), vrrpScript)
-	if (err != nil) || (statuscode == 500) {
+	if (err != nil) || (statuscode == http.StatusInternalServerError) {
 		return false, err
 	}
-	if statuscode == 404 {
+	if statuscode == http.StatusNotFound {
 		return false, nil
 	}
-	if statuscode == 200 {
+	if statuscode == http.StatusOK {
 		return true, nil
 	}
 	return false, fmt.Errorf("error on slave => %v", body)
@@ -313,13 +313,13 @@ func checkVrrpScriptExistsSlave(vrrpScript vrrpScriptType) (bool, error) {
 func vrrpScriptOkSlave(vrrpScript vrrpScriptType) (bool, error) {
 	statuscode, body, err := requestSlave(strings.Join([]string{"/check_vrrp_script_ok/",
 		vrrpScript.Name, "/"}, ""), vrrpScript)
-	if (err != nil) || (statuscode == 500) {
+	if (err != nil) || (statuscode == http.StatusInternalServerError) {
 		return false, err
 	}
-	if statuscode == 404 {
+	if statuscode == http.StatusNotFound {
 		return false, nil
 	}
-	if statuscode == 200 {
+	if statuscode == http.StatusOK {
 		return true, nil
 	}
 	return false, fmt.Errorf("error on slave => %v", body)
@@ -332,7 +332,7 @@ func addVrrpScriptSlave(vrrpScript vrrpScriptType) error {
 	if err != nil {
 		return err
 	}
-	if statuscode == 200 {
+	if statuscode == http.StatusOK {
 		return nil
 	}
 	return fmt.Errorf("error on slave => %v", body)
@@ -345,7 +345,7 @@ func removeVrrpScriptSlave(vrrpScript vrrpScriptType) error {
 	if err != nil {
 		return err
 	}
-	if statuscode == 200 {
+	if statuscode == http.StatusOK {
 		return nil
 	}
 	return fmt.Errorf("error on slave => %v", body)

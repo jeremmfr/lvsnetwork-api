@@ -12,6 +12,13 @@ import (
 	"strings"
 )
 
+const (
+	maxLengthInterfaceNameForVmacNoShort = 10
+	maxLengthVRRPIDForVmacNoShort        = 4
+	maxVIPinVirtualIPaddress             = 20
+	permissionFileCreated                = 0755
+)
+
 // function check if iface exist
 func checkIfaceExists(ifaceVrrp ifaceVrrpType) bool {
 	_, err := os.Stat(strings.Join([]string{"/etc/network/interfaces.d/", ifaceVrrp.Iface}, ""))
@@ -278,7 +285,7 @@ func checkVrrpExistsOtherVG(ifaceVrrp ifaceVrrpType) (string, error) {
 }
 
 // function generate vrrp file string
-func generateVrrpFile(ifaceVrrp ifaceVrrpType, syncAdd bool) string {
+func generateVrrpFile(ifaceVrrp ifaceVrrpType, syncAdd bool) (string, error) {
 	version := ipv4str
 	for _, vip := range ifaceVrrp.IPVip {
 		if strings.Contains(vip, ":") {
@@ -307,12 +314,13 @@ func generateVrrpFile(ifaceVrrp ifaceVrrpType, syncAdd bool) string {
 	}
 	if (ifaceVrrp.UseVmac) && (version != ipv6str) {
 		switch {
-		case (strings.Count(ifaceCut, "") < 9) && (strings.Count(ifaceVrrp.IDVrrp, "") < 4):
+		case (strings.Count(ifaceCut, "") < maxLengthInterfaceNameForVmacNoShort-1) &&
+			(strings.Count(ifaceVrrp.IDVrrp, "") < maxLengthVRRPIDForVmacNoShort):
 			vrrpIn = strings.Join([]string{vrrpIn, "\tuse_vmac vmac_", ifaceCut, "_", ifaceVrrp.IDVrrp, "\n"}, "")
-		case strings.Count(ifaceCut, "") < 10:
+		case strings.Count(ifaceCut, "") < maxLengthInterfaceNameForVmacNoShort:
 			vrrpIn = strings.Join([]string{vrrpIn, "\tuse_vmac vc_", ifaceCut, "_", ifaceVrrp.IDVrrp, "\n"}, "")
 		default:
-			return ""
+			return "", fmt.Errorf("interface %s too long", ifaceCut)
 		}
 		vrrpIn = strings.Join([]string{vrrpIn, "\tvmac_xmit_base\n"}, "")
 	}
@@ -346,7 +354,7 @@ func generateVrrpFile(ifaceVrrp ifaceVrrpType, syncAdd bool) string {
 	vrrpIn = strings.Join([]string{vrrpIn, "\tvirtual_ipaddress {\n"}, "")
 	if (ifaceVrrp.UseVmac) && (version != ipv6str) {
 		for i, vip := range ifaceVrrp.IPVip {
-			if i == 20 {
+			if i == maxVIPinVirtualIPaddress {
 				break
 			}
 			if (strings.Count(ifaceCut, "") < 9) && (strings.Count(ifaceVrrp.IDVrrp, "") < 4) {
@@ -356,10 +364,10 @@ func generateVrrpFile(ifaceVrrp ifaceVrrpType, syncAdd bool) string {
 			}
 		}
 		vrrpIn = strings.Join([]string{vrrpIn, "\t}\n", ""}, "")
-		if len(ifaceVrrp.IPVip) >= 20 {
+		if len(ifaceVrrp.IPVip) >= maxVIPinVirtualIPaddress {
 			vrrpIn = strings.Join([]string{vrrpIn, "\tvirtual_ipaddress_excluded {\n"}, "")
 			for i, vip := range ifaceVrrp.IPVip {
-				if i < 20 {
+				if i < maxVIPinVirtualIPaddress {
 					continue
 				}
 				if (strings.Count(ifaceCut, "") < 9) && (strings.Count(ifaceVrrp.IDVrrp, "") < 4) {
@@ -372,16 +380,16 @@ func generateVrrpFile(ifaceVrrp ifaceVrrpType, syncAdd bool) string {
 		}
 	} else {
 		for i, vip := range ifaceVrrp.IPVip {
-			if i == 20 {
+			if i == maxVIPinVirtualIPaddress {
 				break
 			}
 			vrrpIn = strings.Join([]string{vrrpIn, "\t\t", vip, " dev ", ifaceCut, "\n"}, "")
 		}
 		vrrpIn = strings.Join([]string{vrrpIn, "\t}\n", ""}, "")
-		if len(ifaceVrrp.IPVip) >= 20 {
+		if len(ifaceVrrp.IPVip) >= maxVIPinVirtualIPaddress {
 			vrrpIn = strings.Join([]string{vrrpIn, "\tvirtual_ipaddress_excluded {\n"}, "")
 			for i, vip := range ifaceVrrp.IPVip {
-				if i < 20 {
+				if i < maxVIPinVirtualIPaddress {
 					continue
 				}
 				vrrpIn = strings.Join([]string{vrrpIn, "\t\t", vip, " dev ", ifaceCut, "\n"}, "")
@@ -396,14 +404,14 @@ func generateVrrpFile(ifaceVrrp ifaceVrrpType, syncAdd bool) string {
 			" network_", ifaceVrrp.Iface, "_id_", ifaceVrrp.IDVrrp, " id ", ifaceVrrp.IDVrrp, "\n",
 			"}\n"}, "")
 	}
-	return vrrpIn
+	return vrrpIn, nil
 }
 
 // checkVrrpOk : check vrrp config file
 func checkVrrpOk(ifaceVrrp ifaceVrrpType) (bool, error) {
-	vrrpIn := generateVrrpFile(ifaceVrrp, true)
-	if vrrpIn == "" {
-		return false, fmt.Errorf("interface %q too long", strings.Split(ifaceVrrp.Iface, ":")[0])
+	vrrpIn, err := generateVrrpFile(ifaceVrrp, true)
+	if err != nil {
+		return false, err
 	}
 	vrrpReadByte, err := ioutil.ReadFile(strings.Join([]string{"/etc/keepalived/keepalived-vrrp.d/",
 		ifaceVrrp.VrrpGroup, "/", ifaceVrrp.Iface, "_", ifaceVrrp.IDVrrp, ".conf"}, ""))
@@ -424,9 +432,9 @@ func checkVrrpOk(ifaceVrrp ifaceVrrpType) (bool, error) {
 
 // checkVrrpWithoutSync : check vrrp config file without interface line (move interface vrrp packet)
 func checkVrrpWithoutSync(ifaceVrrp ifaceVrrpType) (bool, error) {
-	vrrpIn := generateVrrpFile(ifaceVrrp, false)
-	if vrrpIn == "" {
-		return false, fmt.Errorf("interface %q too long", strings.Split(ifaceVrrp.Iface, ":")[0])
+	vrrpIn, err := generateVrrpFile(ifaceVrrp, false)
+	if err != nil {
+		return false, err
 	}
 	vrrpReadByte, err := ioutil.ReadFile(strings.Join([]string{"/etc/keepalived/keepalived-vrrp.d/",
 		ifaceVrrp.VrrpGroup, "/", ifaceVrrp.Iface, "_", ifaceVrrp.IDVrrp, ".conf"}, ""))
@@ -449,15 +457,15 @@ func checkVrrpWithoutSync(ifaceVrrp ifaceVrrpType) (bool, error) {
 
 // addVrrp : add vrrp configuration file
 func addVrrp(ifaceVrrp ifaceVrrpType) error {
-	vrrpIn := generateVrrpFile(ifaceVrrp, true)
-	if vrrpIn == "" {
-		return fmt.Errorf("interface %q too long", strings.Split(ifaceVrrp.Iface, ":")[0])
+	vrrpIn, err := generateVrrpFile(ifaceVrrp, true)
+	if err != nil {
+		return err
 	}
 
-	_, err := os.Stat(strings.Join([]string{"/etc/keepalived/keepalived-vrrp.d/", ifaceVrrp.VrrpGroup}, ""))
+	_, err = os.Stat(strings.Join([]string{"/etc/keepalived/keepalived-vrrp.d/", ifaceVrrp.VrrpGroup}, ""))
 	if os.IsNotExist(err) {
 		err := os.Mkdir(strings.Join([]string{"/etc/keepalived/keepalived-vrrp.d/",
-			ifaceVrrp.VrrpGroup}, ""), os.FileMode(0755))
+			ifaceVrrp.VrrpGroup}, ""), os.FileMode(permissionFileCreated))
 		if err != nil {
 			return err
 		}
