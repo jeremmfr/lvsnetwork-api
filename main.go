@@ -159,7 +159,7 @@ func main() {
 	}
 }
 
-// checkIfupdownVersion : test ifquery version for --state options
+// checkIfupdownVersion : test ifquery version for --state options.
 func checkIfupdownVersion() {
 	cmd := exec.Command("ifquery", "--help")
 	stdout, err := cmd.StdoutPipe()
@@ -180,7 +180,7 @@ func checkIfupdownVersion() {
 	}
 }
 
-// sleep : just wait
+// sleep : just wait.
 func sleep() {
 	time.Sleep(time.Duration(*timeSleep) * time.Second)
 }

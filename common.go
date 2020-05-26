@@ -19,13 +19,13 @@ const (
 	permissionFileCreated                = 0755
 )
 
-// function check if iface exist
+// function check if iface exist.
 func checkIfaceExists(ifaceVrrp ifaceVrrpType) bool {
 	_, err := os.Stat(strings.Join([]string{"/etc/network/interfaces.d/", ifaceVrrp.Iface}, ""))
 	return !os.IsNotExist(err)
 }
 
-// generate /etc/network/ file for check/add
+// generate /etc/network/ file for check/add.
 func generateIfaceFile(ifaceVrrp ifaceVrrpType, postupAdd bool) string {
 	var ifaceIn string
 	if *isSlave {
@@ -100,7 +100,7 @@ func generateIfaceFile(ifaceVrrp ifaceVrrpType, postupAdd bool) string {
 	return ifaceIn
 }
 
-// function check if conf up and equal to ifaceVrrp
+// function check if conf up and equal to ifaceVrrp.
 func checkIfaceOk(ifaceVrrp ifaceVrrpType) (bool, error) {
 	ifaceIn := generateIfaceFile(ifaceVrrp, true)
 
@@ -126,7 +126,7 @@ func checkIfaceOk(ifaceVrrp ifaceVrrpType) (bool, error) {
 	return false, nil
 }
 
-// checkIfaceWithoutPostup : check network config without post-up line
+// checkIfaceWithoutPostup : check network config without post-up line.
 func checkIfaceWithoutPostup(ifaceVrrp ifaceVrrpType) (bool, error) {
 	ifaceIn := generateIfaceFile(ifaceVrrp, false)
 
@@ -147,7 +147,7 @@ func checkIfaceWithoutPostup(ifaceVrrp ifaceVrrpType) (bool, error) {
 	return false, nil
 }
 
-// addIfaceFile : write network config file
+// addIfaceFile : write network config file.
 func addIfaceFile(ifaceVrrp ifaceVrrpType) error {
 	ifaceIn := generateIfaceFile(ifaceVrrp, true)
 
@@ -180,7 +180,7 @@ func addIfaceFile(ifaceVrrp ifaceVrrpType) error {
 	return nil
 }
 
-// addIface : call addIfaceFile() and ifup interface
+// addIface : call addIfaceFile() and ifup interface.
 func addIface(ifaceVrrp ifaceVrrpType) error {
 	err := addIfaceFile(ifaceVrrp)
 	if err != nil {
@@ -197,7 +197,7 @@ func addIface(ifaceVrrp ifaceVrrpType) error {
 	return nil
 }
 
-// removeIfaceFile : remove network config file
+// removeIfaceFile : remove network config file.
 func removeIfaceFile(ifaceVrrp ifaceVrrpType) error {
 	err := os.Remove(strings.Join([]string{"/etc/network/interfaces.d/", ifaceVrrp.Iface}, ""))
 	if err != nil {
@@ -206,7 +206,7 @@ func removeIfaceFile(ifaceVrrp ifaceVrrpType) error {
 	return nil
 }
 
-// removeIface : ifdown iface and network config file
+// removeIface : ifdown iface and network config file.
 func removeIface(ifaceVrrp ifaceVrrpType) error {
 	VGs, err := ioutil.ReadDir("/etc/keepalived/keepalived-vrrp.d/")
 	if err != nil {
@@ -256,14 +256,14 @@ func removeIface(ifaceVrrp ifaceVrrpType) error {
 	return nil
 }
 
-// checkVrrpExists: check if vrrp config file exist
+// checkVrrpExists: check if vrrp config file exist.
 func checkVrrpExists(ifaceVrrp ifaceVrrpType) bool {
 	_, err := os.Stat(strings.Join([]string{"/etc/keepalived/keepalived-vrrp.d/",
 		ifaceVrrp.VrrpGroup, "/", ifaceVrrp.Iface, "_", ifaceVrrp.IDVrrp, ".conf"}, ""))
 	return !os.IsNotExist(err)
 }
 
-// checkVrrpExistsOtherVG : check if vrrp config file exist in other vrrp group directory
+// checkVrrpExistsOtherVG : check if vrrp config file exist in other vrrp group directory.
 func checkVrrpExistsOtherVG(ifaceVrrp ifaceVrrpType) (string, error) {
 	VGReturn := ""
 	VGs, err := ioutil.ReadDir("/etc/keepalived/keepalived-vrrp.d/")
@@ -284,7 +284,7 @@ func checkVrrpExistsOtherVG(ifaceVrrp ifaceVrrpType) (string, error) {
 	return VGReturn, nil
 }
 
-// function generate vrrp file string
+// function generate vrrp file string.
 func generateVrrpFile(ifaceVrrp ifaceVrrpType, syncAdd bool) (string, error) {
 	version := ipv4str
 	for _, vip := range ifaceVrrp.IPVip {
@@ -407,7 +407,7 @@ func generateVrrpFile(ifaceVrrp ifaceVrrpType, syncAdd bool) (string, error) {
 	return vrrpIn, nil
 }
 
-// checkVrrpOk : check vrrp config file
+// checkVrrpOk : check vrrp config file.
 func checkVrrpOk(ifaceVrrp ifaceVrrpType) (bool, error) {
 	vrrpIn, err := generateVrrpFile(ifaceVrrp, true)
 	if err != nil {
@@ -430,7 +430,7 @@ func checkVrrpOk(ifaceVrrp ifaceVrrpType) (bool, error) {
 	return false, nil
 }
 
-// checkVrrpWithoutSync : check vrrp config file without interface line (move interface vrrp packet)
+// checkVrrpWithoutSync : check vrrp config file without interface line (move interface vrrp packet).
 func checkVrrpWithoutSync(ifaceVrrp ifaceVrrpType) (bool, error) {
 	vrrpIn, err := generateVrrpFile(ifaceVrrp, false)
 	if err != nil {
@@ -455,7 +455,7 @@ func checkVrrpWithoutSync(ifaceVrrp ifaceVrrpType) (bool, error) {
 	return false, nil
 }
 
-// addVrrp : add vrrp configuration file
+// addVrrp : add vrrp configuration file.
 func addVrrp(ifaceVrrp ifaceVrrpType) error {
 	vrrpIn, err := generateVrrpFile(ifaceVrrp, true)
 	if err != nil {
@@ -478,7 +478,7 @@ func addVrrp(ifaceVrrp ifaceVrrpType) error {
 	return nil
 }
 
-// remove vrrp configuration file
+// remove vrrp configuration file.
 func removeVrrp(ifaceVrrp ifaceVrrpType) error {
 	err := os.Remove(strings.Join([]string{"/etc/keepalived/keepalived-vrrp.d/",
 		ifaceVrrp.VrrpGroup, "/", ifaceVrrp.Iface, "_", ifaceVrrp.IDVrrp, ".conf"}, ""))
@@ -488,7 +488,7 @@ func removeVrrp(ifaceVrrp ifaceVrrpType) error {
 	return nil
 }
 
-// create vrrp_sync_group configuration and reload keepalived daemon
+// create vrrp_sync_group configuration and reload keepalived daemon.
 func syncGroupAndReload() error {
 	VGs, err := ioutil.ReadDir("/etc/keepalived/keepalived-vrrp.d/")
 	if err != nil {
@@ -548,7 +548,7 @@ func syncGroupAndReload() error {
 	return nil
 }
 
-// func reloadVrrp
+// func reloadVrrp.
 func reloadVrrp() error {
 	reloadKeepalivedCommandParts := strings.Fields(*reloadKeepalivedCommand)
 	reloadKeepalivedCommandBin := reloadKeepalivedCommandParts[0]
@@ -560,7 +560,7 @@ func reloadVrrp() error {
 	return nil
 }
 
-// reversePostUp : del route/rule if remove post-up route/rule add
+// reversePostUp : del route/rule if remove post-up route/rule add.
 func reversePostUp(post string) error {
 	if (strings.Contains(post, "route add")) || (strings.Contains(post, "ip rule add")) {
 		postdown := strings.Replace(post, "post-up", "", 1)
@@ -578,7 +578,7 @@ func reversePostUp(post string) error {
 	return nil
 }
 
-// addPostUp : execute command post-up if iface already up
+// addPostUp : execute command post-up if iface already up.
 func addPostUp(postup string) error {
 	postupParts := strings.Fields(postup)
 	postupCommand := postupParts[0]
@@ -590,7 +590,7 @@ func addPostUp(postup string) error {
 	return nil
 }
 
-// changeIfacePostup : change different post-up line with respect to the configuration
+// changeIfacePostup : change different post-up line with respect to the configuration.
 func changeIfacePostup(ifaceVrrp ifaceVrrpType) error {
 	ifaceReadByte, err := ioutil.ReadFile(strings.Join([]string{"/etc/network/interfaces.d/", ifaceVrrp.Iface}, ""))
 	ifaceRead := string(ifaceReadByte)
@@ -667,14 +667,14 @@ func changeIfacePostup(ifaceVrrp ifaceVrrpType) error {
 	return nil
 }
 
-// check if vrrp script file exists
+// check if vrrp script file exists.
 func checkVrrpScriptExists(vrrpScriptName string) bool {
 	_, err := os.Stat(strings.Join([]string{"/etc/keepalived/keepalived-vrrp.d/",
 		"script_", vrrpScriptName, ".conf"}, ""))
 	return !os.IsNotExist(err)
 }
 
-// compare vrrp script file with a vrrpScriptType
+// compare vrrp script file with a vrrpScriptType.
 func checkVrrpScriptOk(vrrpScript vrrpScriptType) (bool, error) {
 	scriptIn := generateScriptFile(vrrpScript)
 	scriptReadByte, err := ioutil.ReadFile(strings.Join([]string{"/etc/keepalived/keepalived-vrrp.d/",
@@ -694,7 +694,7 @@ func checkVrrpScriptOk(vrrpScript vrrpScriptType) (bool, error) {
 	return false, nil
 }
 
-// add vrrp script file on system
+// add vrrp script file on system.
 func addVrrpScriptFile(vrrpScript vrrpScriptType) error {
 	scriptIn := generateScriptFile(vrrpScript)
 	err := ioutil.WriteFile(strings.Join([]string{"/etc/keepalived/keepalived-vrrp.d/",
@@ -705,7 +705,7 @@ func addVrrpScriptFile(vrrpScript vrrpScriptType) error {
 	return nil
 }
 
-// remove vrrp script file on system
+// remove vrrp script file on system.
 func removeVrrpScriptFile(vrrpScript vrrpScriptType) error {
 	err := os.Remove(strings.Join([]string{"/etc/keepalived/keepalived-vrrp.d/",
 		"script_", vrrpScript.Name, ".conf"}, ""))
@@ -715,7 +715,7 @@ func removeVrrpScriptFile(vrrpScript vrrpScriptType) error {
 	return nil
 }
 
-// generate vrrp script file string
+// generate vrrp script file string.
 func generateScriptFile(vrrpScript vrrpScriptType) string {
 	scriptIn := strings.Join([]string{"vrrp_script ", vrrpScript.Name, " {\n",
 		"\tscript \"", vrrpScript.Script, "\"\n"}, "")
@@ -752,7 +752,7 @@ func generateScriptFile(vrrpScript vrrpScriptType) string {
 	return scriptIn
 }
 
-// read vrpp script file on system and fill a vrrpScriptType
+// read vrpp script file on system and fill a vrrpScriptType.
 func readVrrpScriptFile(scriptName string) (vrrpScriptType, error) {
 	var scriptRead vrrpScriptType
 	var err error

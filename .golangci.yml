@@ -5,6 +5,8 @@ linters:
     - gochecknoglobals
     - wsl
     - gocognit
+    - nestif
+    - goerr113
 linters-settings:
   gocyclo:
     # minimal code complexity to report, 30 by default
@@ -15,5 +17,8 @@ issues:
       linters:
         - gosec
     - text: "G204: Subprocess launched with function call as argument or cmd arguments"
+      linters:
+        - gosec
+    - text: "G306: Expect WriteFile permissions to be 0600 or less"
       linters:
         - gosec

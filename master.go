@@ -14,7 +14,7 @@ import (
 	"github.com/gorilla/mux"
 )
 
-// checkVlanCom : ping IP 'ipslave' (in json) from master server (check if L2 ok)
+// checkVlanCom : ping IP 'ipslave' (in json) from master server (check if L2 ok).
 func checkVlanCom(ifaceVrrp ifaceVrrpType) error {
 	sleep()
 	if strings.Contains(ifaceVrrp.IPSlave, ":") {
@@ -31,7 +31,7 @@ func checkVlanCom(ifaceVrrp ifaceVrrpType) error {
 	return nil
 }
 
-//validate missing or incompatibility parameters
+//validate missing or incompatibility parameters.
 func (ifaceVrrp ifaceVrrpType) validate() string {
 	if !ifaceVrrp.IPVipOnly && len(ifaceVrrp.IPVip) != 0 {
 		if ifaceVrrp.IPMaster == "" {
@@ -102,7 +102,7 @@ func (ifaceVrrp ifaceVrrpType) validate() string {
 	return ""
 }
 
-// addIfaceVrrp : on master API for add configuration (network + vrrp) on master & slave server
+// addIfaceVrrp : on master API for add configuration (network + vrrp) on master & slave server.
 func addIfaceVrrp(w http.ResponseWriter, r *http.Request) {
 	if *htpasswdfile != "" {
 		htpasswd := auth.HtpasswdFileProvider(*htpasswdfile)
@@ -316,7 +316,7 @@ func addIfaceVrrpKeepalived(ifaceVrrp ifaceVrrpType, master bool, w http.Respons
 	}
 }
 
-// removeIfaceVrrp on master API for remove all configuration (network + vrrp) on master & slave server
+// removeIfaceVrrp on master API for remove all configuration (network + vrrp) on master & slave server.
 func removeIfaceVrrp(w http.ResponseWriter, r *http.Request) {
 	if *htpasswdfile != "" {
 		htpasswd := auth.HtpasswdFileProvider(*htpasswdfile)
@@ -434,7 +434,7 @@ func removeIfaceVrrp(w http.ResponseWriter, r *http.Request) {
 	mutex.Unlock()
 }
 
-// checkIfaceVrrp on master API for check all configuration (network + vrrp) on master & slave server
+// checkIfaceVrrp on master API for check all configuration (network + vrrp) on master & slave server.
 func checkIfaceVrrp(w http.ResponseWriter, r *http.Request) {
 	if *htpasswdfile != "" {
 		htpasswd := auth.HtpasswdFileProvider(*htpasswdfile)
@@ -610,7 +610,7 @@ func checkIfaceVrrp(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// changeIfaceVrrp on master API for change configuration needed (network + vrrp) on master & slave server
+// changeIfaceVrrp on master API for change configuration needed (network + vrrp) on master & slave server.
 func changeIfaceVrrp(w http.ResponseWriter, r *http.Request) {
 	if *htpasswdfile != "" {
 		htpasswd := auth.HtpasswdFileProvider(*htpasswdfile)
@@ -931,7 +931,7 @@ func changeIfaceVrrp(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// moveIDIfaceVrrp on master API for change ID vrrp without vrrp flap on slave
+// moveIDIfaceVrrp on master API for change ID vrrp without vrrp flap on slave.
 func moveIDIfaceVrrp(w http.ResponseWriter, r *http.Request) {
 	if *htpasswdfile != "" {
 		htpasswd := auth.HtpasswdFileProvider(*htpasswdfile)
@@ -1091,7 +1091,7 @@ func moveIDIfaceVrrp(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// add vrrp script file and reload keepalived on master and slave
+// add vrrp script file and reload keepalived on master and slave.
 func addVrrpScript(w http.ResponseWriter, r *http.Request) {
 	if *htpasswdfile != "" {
 		htpasswd := auth.HtpasswdFileProvider(*htpasswdfile)
@@ -1192,7 +1192,7 @@ func addVrrpScript(w http.ResponseWriter, r *http.Request) {
 	mutex.Unlock()
 }
 
-// remove vrrp script file and reload keepalived on master and slave
+// remove vrrp script file and reload keepalived on master and slave.
 func removeVrrpScript(w http.ResponseWriter, r *http.Request) {
 	if *htpasswdfile != "" {
 		htpasswd := auth.HtpasswdFileProvider(*htpasswdfile)
@@ -1352,7 +1352,7 @@ func changeVrrpScript(w http.ResponseWriter, r *http.Request) {
 	mutex.Unlock()
 }
 
-// read vrrp file on master and check if same on slave
+// read vrrp file on master and check if same on slave.
 func checkVrrpScript(w http.ResponseWriter, r *http.Request) {
 	if *htpasswdfile != "" {
 		htpasswd := auth.HtpasswdFileProvider(*htpasswdfile)
@@ -1413,7 +1413,7 @@ func checkVrrpScript(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// check vrrpScriptType parameters
+// check vrrpScriptType parameters.
 func (vrrpScript vrrpScriptType) validate() string {
 	if vrrpScript.Interval < 1 {
 		return "interval too small"
