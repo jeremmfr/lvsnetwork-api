@@ -242,7 +242,6 @@ func addIfaceVrrpKeepalived(ifaceVrrp ifaceVrrpType, master bool, w http.Respons
 		vrrpExists, err = checkVrrpSlaveExists(ifaceVrrp)
 		if err != nil {
 			http.Error(w, err.Error(), 500)
-			mutex.Unlock()
 			return
 		}
 	}
@@ -255,7 +254,6 @@ func addIfaceVrrpKeepalived(ifaceVrrp ifaceVrrpType, master bool, w http.Respons
 		}
 		if err != nil {
 			http.Error(w, err.Error(), 500)
-			mutex.Unlock()
 			return
 		}
 		if !vrrpOk {
@@ -265,7 +263,6 @@ func addIfaceVrrpKeepalived(ifaceVrrp ifaceVrrpType, master bool, w http.Respons
 			} else {
 				fmt.Fprintln(w, "vrrp already exist on slave with different config")
 			}
-			mutex.Unlock()
 			return
 		}
 		if master {
@@ -275,7 +272,6 @@ func addIfaceVrrpKeepalived(ifaceVrrp ifaceVrrpType, master bool, w http.Respons
 		}
 		if err != nil {
 			http.Error(w, err.Error(), 500)
-			mutex.Unlock()
 			return
 		}
 	} else {
@@ -286,7 +282,6 @@ func addIfaceVrrpKeepalived(ifaceVrrp ifaceVrrpType, master bool, w http.Respons
 		}
 		if err != nil {
 			http.Error(w, err.Error(), 500)
-			mutex.Unlock()
 			return
 		}
 		if master {
@@ -296,7 +291,6 @@ func addIfaceVrrpKeepalived(ifaceVrrp ifaceVrrpType, master bool, w http.Respons
 		}
 		if err != nil {
 			http.Error(w, err.Error(), 500)
-			mutex.Unlock()
 			return
 		}
 
@@ -310,7 +304,6 @@ func addIfaceVrrpKeepalived(ifaceVrrp ifaceVrrpType, master bool, w http.Respons
 		}
 		if err != nil {
 			http.Error(w, err.Error(), 500)
-			mutex.Unlock()
 			return
 		}
 	}
