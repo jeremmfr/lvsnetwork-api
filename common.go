@@ -330,8 +330,15 @@ func generateVrrpFile(ifaceVrrp ifaceVrrpType, syncAdd bool) (string, error) {
 		}
 	}
 	ifaceCut := strings.Split(ifaceVrrp.Iface, ":")[0]
-	vrrpIn := strings.Join([]string{"vrrp_instance network_", ifaceVrrp.Iface, "_id_", ifaceVrrp.IDVrrp, " {\n",
-		"\tstate BACKUP\n"}, "")
+	vrrpIn := "vrrp_instance "
+	if ifaceVrrp.SyncIface != "" {
+		// shortname for bug check arguments on lvs_sync_daemon keepalived v2.x
+		// -> 'lvs_sync_daemon vrrp interface name 'network_XXXX_id_YY' too long - ignoring'
+		vrrpIn = strings.Join([]string{vrrpIn, ifaceVrrp.Iface, "_id_", ifaceVrrp.IDVrrp}, "")
+	} else {
+		vrrpIn = strings.Join([]string{vrrpIn, "network_", ifaceVrrp.Iface, "_id_", ifaceVrrp.IDVrrp}, "")
+	}
+	vrrpIn = strings.Join([]string{vrrpIn, " {\n", "\tstate BACKUP\n"}, "")
 	if syncAdd {
 		if ifaceVrrp.IfaceForVrrp != "" {
 			vrrpIn = strings.Join([]string{vrrpIn, "\tinterface ", ifaceVrrp.IfaceForVrrp, "\n"}, "")
@@ -443,7 +450,7 @@ func generateVrrpFile(ifaceVrrp ifaceVrrpType, syncAdd bool) (string, error) {
 		vrrpIn = strings.Join([]string{
 			vrrpIn, "global_defs {\n",
 			"\tlvs_sync_daemon ", ifaceVrrp.SyncIface,
-			" network_", ifaceVrrp.Iface, "_id_", ifaceVrrp.IDVrrp, " id ", ifaceVrrp.IDVrrp, "\n",
+			" ", ifaceVrrp.Iface, "_id_", ifaceVrrp.IDVrrp, " id ", ifaceVrrp.IDVrrp, "\n",
 			"}\n",
 		}, "")
 	}
