@@ -15,6 +15,7 @@ func onslaveCheckIfaceExists(w http.ResponseWriter, r *http.Request) {
 	err := dec.Decode(&IfaceVrrp)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
+
 		return
 	}
 	vars := mux.Vars(r)
@@ -22,6 +23,7 @@ func onslaveCheckIfaceExists(w http.ResponseWriter, r *http.Request) {
 	ifaceExists := checkIfaceExists(IfaceVrrp)
 	if !ifaceExists {
 		w.WriteHeader(http.StatusNotFound)
+
 		return
 	}
 }
@@ -33,6 +35,7 @@ func onslaveCheckIfaceOk(w http.ResponseWriter, r *http.Request) {
 	err := dec.Decode(&IfaceVrrp)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
+
 		return
 	}
 	vars := mux.Vars(r)
@@ -43,6 +46,7 @@ func onslaveCheckIfaceOk(w http.ResponseWriter, r *http.Request) {
 	}
 	if !ifaceOk {
 		w.WriteHeader(http.StatusNotFound)
+
 		return
 	}
 }
@@ -55,6 +59,7 @@ func onslaveCheckIfaceWithoutPostup(w http.ResponseWriter, r *http.Request) {
 	err := dec.Decode(&IfaceVrrp)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
+
 		return
 	}
 	vars := mux.Vars(r)
@@ -65,6 +70,7 @@ func onslaveCheckIfaceWithoutPostup(w http.ResponseWriter, r *http.Request) {
 	}
 	if !ifaceOk {
 		w.WriteHeader(http.StatusNotFound)
+
 		return
 	}
 }
@@ -76,6 +82,7 @@ func onslaveAddIface(w http.ResponseWriter, r *http.Request) {
 	err := dec.Decode(&IfaceVrrp)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
+
 		return
 	}
 	vars := mux.Vars(r)
@@ -83,6 +90,7 @@ func onslaveAddIface(w http.ResponseWriter, r *http.Request) {
 	err = addIface(IfaceVrrp)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
+
 		return
 	}
 }
@@ -94,6 +102,7 @@ func onslaveAddIfaceFile(w http.ResponseWriter, r *http.Request) {
 	err := dec.Decode(&IfaceVrrp)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
+
 		return
 	}
 	vars := mux.Vars(r)
@@ -101,6 +110,7 @@ func onslaveAddIfaceFile(w http.ResponseWriter, r *http.Request) {
 	err = addIfaceFile(IfaceVrrp)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
+
 		return
 	}
 }
@@ -112,6 +122,7 @@ func onslaveRemoveIface(w http.ResponseWriter, r *http.Request) {
 	err := dec.Decode(&IfaceVrrp)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
+
 		return
 	}
 	vars := mux.Vars(r)
@@ -119,6 +130,7 @@ func onslaveRemoveIface(w http.ResponseWriter, r *http.Request) {
 	err = removeIface(IfaceVrrp)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
+
 		return
 	}
 }
@@ -130,6 +142,7 @@ func onslaveRemoveIfaceFile(w http.ResponseWriter, r *http.Request) {
 	err := dec.Decode(&IfaceVrrp)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
+
 		return
 	}
 	vars := mux.Vars(r)
@@ -137,6 +150,7 @@ func onslaveRemoveIfaceFile(w http.ResponseWriter, r *http.Request) {
 	err = removeIfaceFile(IfaceVrrp)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
+
 		return
 	}
 }
@@ -149,6 +163,7 @@ func onslaveChangeIfacePostup(w http.ResponseWriter, r *http.Request) {
 	err := dec.Decode(&IfaceVrrp)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
+
 		return
 	}
 	vars := mux.Vars(r)
@@ -156,6 +171,7 @@ func onslaveChangeIfacePostup(w http.ResponseWriter, r *http.Request) {
 	err = changeIfacePostup(IfaceVrrp)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
+
 		return
 	}
 }
@@ -167,6 +183,7 @@ func onslaveCheckVrrpExists(w http.ResponseWriter, r *http.Request) {
 	err := dec.Decode(&IfaceVrrp)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
+
 		return
 	}
 	vars := mux.Vars(r)
@@ -174,6 +191,7 @@ func onslaveCheckVrrpExists(w http.ResponseWriter, r *http.Request) {
 	vrrpExists := checkVrrpExists(IfaceVrrp)
 	if !vrrpExists {
 		w.WriteHeader(http.StatusNotFound)
+
 		return
 	}
 }
@@ -186,6 +204,7 @@ func onslaveCheckVrrpExistsOtherVG(w http.ResponseWriter, r *http.Request) {
 	err := dec.Decode(&IfaceVrrp)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
+
 		return
 	}
 	vars := mux.Vars(r)
@@ -193,10 +212,12 @@ func onslaveCheckVrrpExistsOtherVG(w http.ResponseWriter, r *http.Request) {
 	VG, err := checkVrrpExistsOtherVG(IfaceVrrp)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
+
 		return
 	}
 	if VG == "" {
 		w.WriteHeader(http.StatusNotFound)
+
 		return
 	}
 	fmt.Fprintln(w, VG)
@@ -209,6 +230,7 @@ func onslaveCheckVrrpOk(w http.ResponseWriter, r *http.Request) {
 	err := dec.Decode(&IfaceVrrp)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
+
 		return
 	}
 	vars := mux.Vars(r)
@@ -219,6 +241,7 @@ func onslaveCheckVrrpOk(w http.ResponseWriter, r *http.Request) {
 	}
 	if !vrrpOk {
 		w.WriteHeader(http.StatusNotFound)
+
 		return
 	}
 }
@@ -231,6 +254,7 @@ func onslaveCheckVrrpWithoutSync(w http.ResponseWriter, r *http.Request) {
 	err := dec.Decode(&IfaceVrrp)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
+
 		return
 	}
 	vars := mux.Vars(r)
@@ -241,6 +265,7 @@ func onslaveCheckVrrpWithoutSync(w http.ResponseWriter, r *http.Request) {
 	}
 	if !vrrpOk {
 		w.WriteHeader(http.StatusNotFound)
+
 		return
 	}
 }
@@ -269,6 +294,7 @@ func onslaveAddVrrp(w http.ResponseWriter, r *http.Request) {
 	err := dec.Decode(&IfaceVrrp)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
+
 		return
 	}
 	vars := mux.Vars(r)
@@ -286,6 +312,7 @@ func onslaveRemoveVrrp(w http.ResponseWriter, r *http.Request) {
 	err := dec.Decode(&IfaceVrrp)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
+
 		return
 	}
 	vars := mux.Vars(r)
@@ -303,11 +330,13 @@ func onslaveCheckVrrpScriptExists(w http.ResponseWriter, r *http.Request) {
 	err := dec.Decode(&vrrpScript)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
+
 		return
 	}
 	vrrpScriptExists := checkVrrpScriptExists(vrrpScript.Name)
 	if !vrrpScriptExists {
 		w.WriteHeader(http.StatusNotFound)
+
 		return
 	}
 }
@@ -319,6 +348,7 @@ func onslaveCheckVrrpScriptOk(w http.ResponseWriter, r *http.Request) {
 	err := dec.Decode(&vrrpScript)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
+
 		return
 	}
 	vrrpOk, err := checkVrrpScriptOk(vrrpScript)
@@ -327,6 +357,7 @@ func onslaveCheckVrrpScriptOk(w http.ResponseWriter, r *http.Request) {
 	}
 	if !vrrpOk {
 		w.WriteHeader(http.StatusNotFound)
+
 		return
 	}
 }
@@ -338,6 +369,7 @@ func onslaveAddVrrpScript(w http.ResponseWriter, r *http.Request) {
 	err := dec.Decode(&vrrpScript)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
+
 		return
 	}
 	err = addVrrpScriptFile(vrrpScript)
@@ -353,6 +385,7 @@ func onslaveRemoveVrrpScript(w http.ResponseWriter, r *http.Request) {
 	err := dec.Decode(&vrrpScript)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
+
 		return
 	}
 	err = removeVrrpScriptFile(vrrpScript)

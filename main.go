@@ -41,6 +41,7 @@ type ifaceVrrpType struct {
 	PostUp            []string `json:"Post_up"`
 	TrackScript       []string `json:"track_script"`
 }
+
 type vrrpScriptType struct {
 	InitFail      bool   `json:"init_fail"`
 	WeightReverse bool   `json:"weight_reverse"`
@@ -66,8 +67,10 @@ var (
 	mutex                   = &sync.Mutex{}
 )
 
-const ipv4str string = "ipv4"
-const ipv6str string = "ipv6"
+const (
+	ipv4str string = "ipv4"
+	ipv6str string = "ipv6"
+)
 
 func main() {
 	listenIP := flag.String("ip", "127.0.0.1", "listen on IP")
@@ -89,7 +92,7 @@ func main() {
 	flag.Parse()
 
 	// accesslog file open
-	accessLog, err := os.OpenFile(*accessLogFile, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+	accessLog, err := os.OpenFile(*accessLogFile, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o644)
 	if err != nil {
 		log.Fatalf("Failed to open access log: %s", err)
 	}

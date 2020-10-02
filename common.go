@@ -16,12 +16,13 @@ const (
 	maxLengthInterfaceNameForVmacNoShort = 10
 	maxLengthVRRPIDForVmacNoShort        = 4
 	maxVIPinVirtualIPaddress             = 20
-	permissionFileCreated                = 0755
+	permissionFileCreated                = 0o755
 )
 
 // function check if iface exist.
 func checkIfaceExists(ifaceVrrp ifaceVrrpType) bool {
 	_, err := os.Stat(strings.Join([]string{"/etc/network/interfaces.d/", ifaceVrrp.Iface}, ""))
+
 	return !os.IsNotExist(err)
 }
 
@@ -30,34 +31,46 @@ func generateIfaceFile(ifaceVrrp ifaceVrrpType, postupAdd bool) string {
 	var ifaceIn string
 	if *isSlave {
 		if strings.Contains(ifaceVrrp.IPSlave, ":") {
-			ifaceIn = strings.Join([]string{"auto ", ifaceVrrp.Iface, "\n",
+			ifaceIn = strings.Join([]string{
+				"auto ", ifaceVrrp.Iface, "\n",
 				"iface ", ifaceVrrp.Iface, " inet6 static\n",
-				"\taddress ", ifaceVrrp.IPSlave, "/", ifaceVrrp.Mask, "\n"}, "")
+				"\taddress ", ifaceVrrp.IPSlave, "/", ifaceVrrp.Mask, "\n",
+			}, "")
 		} else {
 			if ifaceVrrp.IPSlave == "" {
-				ifaceIn = strings.Join([]string{"auto ", ifaceVrrp.Iface, "\n",
+				ifaceIn = strings.Join([]string{
+					"auto ", ifaceVrrp.Iface, "\n",
 					"iface ", ifaceVrrp.Iface, " inet manual\n",
-					"\tup ifconfig ", ifaceVrrp.Iface, " up\n"}, "")
+					"\tup ifconfig ", ifaceVrrp.Iface, " up\n",
+				}, "")
 			} else {
-				ifaceIn = strings.Join([]string{"auto ", ifaceVrrp.Iface, "\n",
+				ifaceIn = strings.Join([]string{
+					"auto ", ifaceVrrp.Iface, "\n",
 					"iface ", ifaceVrrp.Iface, " inet static\n",
-					"\taddress ", ifaceVrrp.IPSlave, "/", ifaceVrrp.Mask, "\n"}, "")
+					"\taddress ", ifaceVrrp.IPSlave, "/", ifaceVrrp.Mask, "\n",
+				}, "")
 			}
 		}
 	} else {
 		if strings.Contains(ifaceVrrp.IPMaster, ":") {
-			ifaceIn = strings.Join([]string{"auto ", ifaceVrrp.Iface, "\n",
+			ifaceIn = strings.Join([]string{
+				"auto ", ifaceVrrp.Iface, "\n",
 				"iface ", ifaceVrrp.Iface, " inet6 static\n",
-				"\taddress ", ifaceVrrp.IPMaster, "/", ifaceVrrp.Mask, "\n"}, "")
+				"\taddress ", ifaceVrrp.IPMaster, "/", ifaceVrrp.Mask, "\n",
+			}, "")
 		} else {
 			if ifaceVrrp.IPMaster == "" {
-				ifaceIn = strings.Join([]string{"auto ", ifaceVrrp.Iface, "\n",
+				ifaceIn = strings.Join([]string{
+					"auto ", ifaceVrrp.Iface, "\n",
 					"iface ", ifaceVrrp.Iface, " inet manual\n",
-					"\tup ifconfig ", ifaceVrrp.Iface, " up\n"}, "")
+					"\tup ifconfig ", ifaceVrrp.Iface, " up\n",
+				}, "")
 			} else {
-				ifaceIn = strings.Join([]string{"auto ", ifaceVrrp.Iface, "\n",
+				ifaceIn = strings.Join([]string{
+					"auto ", ifaceVrrp.Iface, "\n",
 					"iface ", ifaceVrrp.Iface, " inet static\n",
-					"\taddress ", ifaceVrrp.IPMaster, "/", ifaceVrrp.Mask, "\n"}, "")
+					"\taddress ", ifaceVrrp.IPMaster, "/", ifaceVrrp.Mask, "\n",
+				}, "")
 			}
 		}
 	}
@@ -69,26 +82,34 @@ func generateIfaceFile(ifaceVrrp ifaceVrrpType, postupAdd bool) string {
 	}
 	if *isSlave {
 		if ifaceVrrp.LACPSlavesSlave != "" {
-			ifaceIn = strings.Join([]string{ifaceIn, "\tslaves ", ifaceVrrp.LACPSlavesSlave, "\n",
+			ifaceIn = strings.Join([]string{
+				ifaceIn, "\tslaves ", ifaceVrrp.LACPSlavesSlave, "\n",
 				"\tbond_mode 802.3ad\n",
 				"\tbond_miimon 50\n",
 				"\tbond_downdelay 200\n",
-				"\tbond_updelay 200\n"}, "")
+				"\tbond_updelay 200\n",
+			}, "")
 			if postupAdd {
-				ifaceIn = strings.Join([]string{ifaceIn,
-					"\tpost-up echo layer3+4 > /sys/class/net/", ifaceVrrp.Iface, "/bonding/xmit_hash_policy\n"}, "")
+				ifaceIn = strings.Join([]string{
+					ifaceIn,
+					"\tpost-up echo layer3+4 > /sys/class/net/", ifaceVrrp.Iface, "/bonding/xmit_hash_policy\n",
+				}, "")
 			}
 		}
 	} else {
 		if ifaceVrrp.LACPSlavesMaster != "" {
-			ifaceIn = strings.Join([]string{ifaceIn, "\tslaves ", ifaceVrrp.LACPSlavesMaster, "\n",
+			ifaceIn = strings.Join([]string{
+				ifaceIn, "\tslaves ", ifaceVrrp.LACPSlavesMaster, "\n",
 				"\tbond_mode 802.3ad\n",
 				"\tbond_miimon 50\n",
 				"\tbond_downdelay 200\n",
-				"\tbond_updelay 200\n"}, "")
+				"\tbond_updelay 200\n",
+			}, "")
 			if postupAdd {
-				ifaceIn = strings.Join([]string{ifaceIn,
-					"\tpost-up echo layer3+4 > /sys/class/net/", ifaceVrrp.Iface, "/bonding/xmit_hash_policy\n"}, "")
+				ifaceIn = strings.Join([]string{
+					ifaceIn,
+					"\tpost-up echo layer3+4 > /sys/class/net/", ifaceVrrp.Iface, "/bonding/xmit_hash_policy\n",
+				}, "")
 			}
 		}
 	}
@@ -97,6 +118,7 @@ func generateIfaceFile(ifaceVrrp ifaceVrrpType, postupAdd bool) string {
 			ifaceIn = strings.Join([]string{ifaceIn, "\tpost-up ", post, "\n"}, "")
 		}
 	}
+
 	return ifaceIn
 }
 
@@ -115,14 +137,17 @@ func checkIfaceOk(ifaceVrrp ifaceVrrpType) (bool, error) {
 			if *debug {
 				log.Printf("ifquery %v --state failed", ifaceVrrp.Iface)
 			}
+
 			return false, nil
 		}
+
 		return true, nil
 	}
 	if *debug {
 		log.Printf("File from json : %#v", ifaceIn)
 		log.Printf("File read : %#v", ifaceRead)
 	}
+
 	return false, nil
 }
 
@@ -144,6 +169,7 @@ func checkIfaceWithoutPostup(ifaceVrrp ifaceVrrpType) (bool, error) {
 		log.Printf("File from json : %#v", ifaceIn)
 		log.Printf("File read : %#v", ifaceRead)
 	}
+
 	return false, nil
 }
 
@@ -167,16 +193,18 @@ func addIfaceFile(ifaceVrrp ifaceVrrpType) error {
 		returnCmd, _ := ioutil.ReadAll(stdout)
 		if (strings.Contains(string(returnCmd), "default")) &&
 			(!strings.Contains(string(returnCmd), strings.Join([]string{
-				"default", "via", ifaceVrrp.DefaultGW}, " "))) {
+				"default", "via", ifaceVrrp.DefaultGW,
+			}, " "))) {
 			return fmt.Errorf("default gateway already exist")
 		}
 	}
 
 	err := ioutil.WriteFile(strings.Join([]string{"/etc/network/interfaces.d/", ifaceVrrp.Iface}, ""),
-		[]byte(ifaceIn), 0644)
+		[]byte(ifaceIn), 0o644)
 	if err != nil {
 		return err
 	}
+
 	return nil
 }
 
@@ -194,6 +222,7 @@ func addIface(ifaceVrrp ifaceVrrpType) error {
 	if err != nil {
 		return fmt.Errorf("error on ifup %v", ifaceVrrp.Iface)
 	}
+
 	return nil
 }
 
@@ -203,6 +232,7 @@ func removeIfaceFile(ifaceVrrp ifaceVrrpType) error {
 	if err != nil {
 		return err
 	}
+
 	return nil
 }
 
@@ -253,13 +283,17 @@ func removeIface(ifaceVrrp ifaceVrrpType) error {
 	if err != nil {
 		return err
 	}
+
 	return nil
 }
 
 // checkVrrpExists: check if vrrp config file exist.
 func checkVrrpExists(ifaceVrrp ifaceVrrpType) bool {
-	_, err := os.Stat(strings.Join([]string{"/etc/keepalived/keepalived-vrrp.d/",
-		ifaceVrrp.VrrpGroup, "/", ifaceVrrp.Iface, "_", ifaceVrrp.IDVrrp, ".conf"}, ""))
+	_, err := os.Stat(strings.Join([]string{
+		"/etc/keepalived/keepalived-vrrp.d/",
+		ifaceVrrp.VrrpGroup, "/", ifaceVrrp.Iface, "_", ifaceVrrp.IDVrrp, ".conf",
+	}, ""))
+
 	return !os.IsNotExist(err)
 }
 
@@ -274,13 +308,16 @@ func checkVrrpExistsOtherVG(ifaceVrrp ifaceVrrpType) (string, error) {
 		if strings.HasSuffix(VG.Name(), ".conf") {
 			continue
 		}
-		_, err := os.Stat(strings.Join([]string{"/etc/keepalived/keepalived-vrrp.d/",
-			VG.Name(), "/", ifaceVrrp.Iface, "_", ifaceVrrp.IDVrrp, ".conf"}, ""))
+		_, err := os.Stat(strings.Join([]string{
+			"/etc/keepalived/keepalived-vrrp.d/",
+			VG.Name(), "/", ifaceVrrp.Iface, "_", ifaceVrrp.IDVrrp, ".conf",
+		}, ""))
 
 		if !os.IsNotExist(err) {
 			VGReturn = VG.Name()
 		}
 	}
+
 	return VGReturn, nil
 }
 
@@ -302,9 +339,11 @@ func generateVrrpFile(ifaceVrrp ifaceVrrpType, syncAdd bool) (string, error) {
 			vrrpIn = strings.Join([]string{vrrpIn, "\tinterface ", ifaceCut, "\n"}, "")
 		}
 	}
-	vrrpIn = strings.Join([]string{vrrpIn, "\ttrack_interface {\n",
+	vrrpIn = strings.Join([]string{
+		vrrpIn, "\ttrack_interface {\n",
 		"\t\t", ifaceCut, "\n",
-		"\t}\n"}, "")
+		"\t}\n",
+	}, "")
 	if len(ifaceVrrp.TrackScript) > 0 {
 		vrrpIn = strings.Join([]string{vrrpIn, "\ttrack_script {\n"}, "")
 		for _, script := range ifaceVrrp.TrackScript {
@@ -346,10 +385,12 @@ func generateVrrpFile(ifaceVrrp ifaceVrrpType, syncAdd bool) (string, error) {
 		vrrpIn = strings.Join([]string{vrrpIn, "\tadvert_int 1\n"}, "")
 	}
 	if (ifaceVrrp.AuthType != "") && (version != ipv6str) {
-		vrrpIn = strings.Join([]string{vrrpIn, "\tauthentication {\n",
+		vrrpIn = strings.Join([]string{
+			vrrpIn, "\tauthentication {\n",
 			"\t\tauth_type ", ifaceVrrp.AuthType, "\n",
 			"\t\tauth_pass ", ifaceVrrp.AuthPass, "\n",
-			"\t}\n"}, "")
+			"\t}\n",
+		}, "")
 	}
 	vrrpIn = strings.Join([]string{vrrpIn, "\tvirtual_ipaddress {\n"}, "")
 	if (ifaceVrrp.UseVmac) && (version != ipv6str) {
@@ -399,11 +440,14 @@ func generateVrrpFile(ifaceVrrp ifaceVrrpType, syncAdd bool) (string, error) {
 	}
 	vrrpIn = strings.Join([]string{vrrpIn, "}\n", ""}, "")
 	if ifaceVrrp.SyncIface != "" {
-		vrrpIn = strings.Join([]string{vrrpIn, "global_defs {\n",
+		vrrpIn = strings.Join([]string{
+			vrrpIn, "global_defs {\n",
 			"\tlvs_sync_daemon ", ifaceVrrp.SyncIface,
 			" network_", ifaceVrrp.Iface, "_id_", ifaceVrrp.IDVrrp, " id ", ifaceVrrp.IDVrrp, "\n",
-			"}\n"}, "")
+			"}\n",
+		}, "")
 	}
+
 	return vrrpIn, nil
 }
 
@@ -413,8 +457,10 @@ func checkVrrpOk(ifaceVrrp ifaceVrrpType) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	vrrpReadByte, err := ioutil.ReadFile(strings.Join([]string{"/etc/keepalived/keepalived-vrrp.d/",
-		ifaceVrrp.VrrpGroup, "/", ifaceVrrp.Iface, "_", ifaceVrrp.IDVrrp, ".conf"}, ""))
+	vrrpReadByte, err := ioutil.ReadFile(strings.Join([]string{
+		"/etc/keepalived/keepalived-vrrp.d/",
+		ifaceVrrp.VrrpGroup, "/", ifaceVrrp.Iface, "_", ifaceVrrp.IDVrrp, ".conf",
+	}, ""))
 
 	vrrpRead := string(vrrpReadByte)
 	if err != nil {
@@ -427,6 +473,7 @@ func checkVrrpOk(ifaceVrrp ifaceVrrpType) (bool, error) {
 		log.Printf("File from json : %#v", vrrpIn)
 		log.Printf("File read : %#v", vrrpRead)
 	}
+
 	return false, nil
 }
 
@@ -436,8 +483,10 @@ func checkVrrpWithoutSync(ifaceVrrp ifaceVrrpType) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	vrrpReadByte, err := ioutil.ReadFile(strings.Join([]string{"/etc/keepalived/keepalived-vrrp.d/",
-		ifaceVrrp.VrrpGroup, "/", ifaceVrrp.Iface, "_", ifaceVrrp.IDVrrp, ".conf"}, ""))
+	vrrpReadByte, err := ioutil.ReadFile(strings.Join([]string{
+		"/etc/keepalived/keepalived-vrrp.d/",
+		ifaceVrrp.VrrpGroup, "/", ifaceVrrp.Iface, "_", ifaceVrrp.IDVrrp, ".conf",
+	}, ""))
 
 	vrrpRead := string(vrrpReadByte)
 	if err != nil {
@@ -452,6 +501,7 @@ func checkVrrpWithoutSync(ifaceVrrp ifaceVrrpType) (bool, error) {
 		log.Printf("File from json : %#v", vrrpIn)
 		log.Printf("File read : %#v", vrrpRead)
 	}
+
 	return false, nil
 }
 
@@ -464,27 +514,35 @@ func addVrrp(ifaceVrrp ifaceVrrpType) error {
 
 	_, err = os.Stat(strings.Join([]string{"/etc/keepalived/keepalived-vrrp.d/", ifaceVrrp.VrrpGroup}, ""))
 	if os.IsNotExist(err) {
-		err := os.Mkdir(strings.Join([]string{"/etc/keepalived/keepalived-vrrp.d/",
-			ifaceVrrp.VrrpGroup}, ""), os.FileMode(permissionFileCreated))
+		err := os.Mkdir(strings.Join([]string{
+			"/etc/keepalived/keepalived-vrrp.d/",
+			ifaceVrrp.VrrpGroup,
+		}, ""), os.FileMode(permissionFileCreated))
 		if err != nil {
 			return err
 		}
 	}
-	err = ioutil.WriteFile(strings.Join([]string{"/etc/keepalived/keepalived-vrrp.d/",
-		ifaceVrrp.VrrpGroup, "/", ifaceVrrp.Iface, "_", ifaceVrrp.IDVrrp, ".conf"}, ""), []byte(vrrpIn), 0644)
+	err = ioutil.WriteFile(strings.Join([]string{
+		"/etc/keepalived/keepalived-vrrp.d/",
+		ifaceVrrp.VrrpGroup, "/", ifaceVrrp.Iface, "_", ifaceVrrp.IDVrrp, ".conf",
+	}, ""), []byte(vrrpIn), 0o644)
 	if err != nil {
 		return err
 	}
+
 	return nil
 }
 
 // remove vrrp configuration file.
 func removeVrrp(ifaceVrrp ifaceVrrpType) error {
-	err := os.Remove(strings.Join([]string{"/etc/keepalived/keepalived-vrrp.d/",
-		ifaceVrrp.VrrpGroup, "/", ifaceVrrp.Iface, "_", ifaceVrrp.IDVrrp, ".conf"}, ""))
+	err := os.Remove(strings.Join([]string{
+		"/etc/keepalived/keepalived-vrrp.d/",
+		ifaceVrrp.VrrpGroup, "/", ifaceVrrp.Iface, "_", ifaceVrrp.IDVrrp, ".conf",
+	}, ""))
 	if err != nil {
 		return err
 	}
+
 	return nil
 }
 
@@ -528,8 +586,10 @@ func syncGroupAndReload() error {
 					vrrpSyncGroupIn = strings.Join([]string{vrrpSyncGroupIn, "\t\t", instance, "\n"}, "")
 				}
 				vrrpSyncGroupIn = strings.Join([]string{vrrpSyncGroupIn, "\t}\n}\n"}, "")
-				err := ioutil.WriteFile(strings.Join([]string{"/etc/keepalived/keepalived-vrrp.d/",
-					VG.Name(), "/vrrp_sync_group"}, ""), []byte(vrrpSyncGroupIn), 0644)
+				err := ioutil.WriteFile(strings.Join([]string{
+					"/etc/keepalived/keepalived-vrrp.d/",
+					VG.Name(), "/vrrp_sync_group",
+				}, ""), []byte(vrrpSyncGroupIn), 0o644)
 				if err != nil {
 					return err
 				}
@@ -545,6 +605,7 @@ func syncGroupAndReload() error {
 	if err != nil {
 		return err
 	}
+
 	return nil
 }
 
@@ -557,6 +618,7 @@ func reloadVrrp() error {
 	if err != nil {
 		return fmt.Errorf(string(cmdOut), err.Error())
 	}
+
 	return nil
 }
 
@@ -575,6 +637,7 @@ func reversePostUp(post string) error {
 			return fmt.Errorf(postdown, string(cmdOut), err.Error())
 		}
 	}
+
 	return nil
 }
 
@@ -587,6 +650,7 @@ func addPostUp(postup string) error {
 	if err != nil {
 		return fmt.Errorf(postup, string(cmdOut), err.Error())
 	}
+
 	return nil
 }
 
@@ -605,8 +669,8 @@ func changeIfacePostup(ifaceVrrp ifaceVrrpType) error {
 			for _, postupIn := range ifaceVrrp.PostUp {
 				addPost := true
 				for _, postupRead := range postupLine {
-					postupReadShort := strings.Replace(postupRead, "\tpost-up ", "", -1)
-					postupReadShort = strings.Replace(postupReadShort, "\n", "", -1)
+					postupReadShort := strings.ReplaceAll(postupRead, "\tpost-up ", "")
+					postupReadShort = strings.ReplaceAll(postupReadShort, "\n", "")
 					if postupIn == postupReadShort {
 						addPost = false
 					}
@@ -620,10 +684,12 @@ func changeIfacePostup(ifaceVrrp ifaceVrrpType) error {
 			}
 			for _, postupRead := range postupLine {
 				removePost := true
-				postupReadShort := strings.Replace(postupRead, "\tpost-up ", "", -1)
-				postupReadShort = strings.Replace(postupReadShort, "\n", "", -1)
-				if postupReadShort == strings.Join([]string{"echo layer3+4 > /sys/class/net/",
-					ifaceVrrp.Iface, "/bonding/xmit_hash_policy"}, "") {
+				postupReadShort := strings.ReplaceAll(postupRead, "\tpost-up ", "")
+				postupReadShort = strings.ReplaceAll(postupReadShort, "\n", "")
+				if postupReadShort == strings.Join([]string{
+					"echo layer3+4 > /sys/class/net/",
+					ifaceVrrp.Iface, "/bonding/xmit_hash_policy",
+				}, "") {
 					continue
 				}
 				for _, postupIn := range ifaceVrrp.PostUp {
@@ -640,10 +706,12 @@ func changeIfacePostup(ifaceVrrp ifaceVrrpType) error {
 			}
 		} else {
 			for _, postupRead := range postupLine {
-				postupReadShort := strings.Replace(postupRead, "\tpost-up ", "", -1)
-				postupReadShort = strings.Replace(postupReadShort, "\n", "", -1)
-				if postupReadShort == strings.Join([]string{"echo layer3+4 > /sys/class/net/",
-					ifaceVrrp.Iface, "/bonding/xmit_hash_policy"}, "") {
+				postupReadShort := strings.ReplaceAll(postupRead, "\tpost-up ", "")
+				postupReadShort = strings.ReplaceAll(postupReadShort, "\n", "")
+				if postupReadShort == strings.Join([]string{
+					"echo layer3+4 > /sys/class/net/",
+					ifaceVrrp.Iface, "/bonding/xmit_hash_policy",
+				}, "") {
 					continue
 				}
 				err := reversePostUp(postupReadShort)
@@ -664,21 +732,27 @@ func changeIfacePostup(ifaceVrrp ifaceVrrpType) error {
 			return nil
 		}
 	}
+
 	return nil
 }
 
 // check if vrrp script file exists.
 func checkVrrpScriptExists(vrrpScriptName string) bool {
-	_, err := os.Stat(strings.Join([]string{"/etc/keepalived/keepalived-vrrp.d/",
-		"script_", vrrpScriptName, ".conf"}, ""))
+	_, err := os.Stat(strings.Join([]string{
+		"/etc/keepalived/keepalived-vrrp.d/",
+		"script_", vrrpScriptName, ".conf",
+	}, ""))
+
 	return !os.IsNotExist(err)
 }
 
 // compare vrrp script file with a vrrpScriptType.
 func checkVrrpScriptOk(vrrpScript vrrpScriptType) (bool, error) {
 	scriptIn := generateScriptFile(vrrpScript)
-	scriptReadByte, err := ioutil.ReadFile(strings.Join([]string{"/etc/keepalived/keepalived-vrrp.d/",
-		"script_", vrrpScript.Name, ".conf"}, ""))
+	scriptReadByte, err := ioutil.ReadFile(strings.Join([]string{
+		"/etc/keepalived/keepalived-vrrp.d/",
+		"script_", vrrpScript.Name, ".conf",
+	}, ""))
 
 	scriptRead := string(scriptReadByte)
 	if err != nil {
@@ -691,34 +765,43 @@ func checkVrrpScriptOk(vrrpScript vrrpScriptType) (bool, error) {
 		log.Printf("File from json : %#v", scriptIn)
 		log.Printf("File read : %#v", scriptRead)
 	}
+
 	return false, nil
 }
 
 // add vrrp script file on system.
 func addVrrpScriptFile(vrrpScript vrrpScriptType) error {
 	scriptIn := generateScriptFile(vrrpScript)
-	err := ioutil.WriteFile(strings.Join([]string{"/etc/keepalived/keepalived-vrrp.d/",
-		"script_", vrrpScript.Name, ".conf"}, ""), []byte(scriptIn), 0644)
+	err := ioutil.WriteFile(strings.Join([]string{
+		"/etc/keepalived/keepalived-vrrp.d/",
+		"script_", vrrpScript.Name, ".conf",
+	}, ""), []byte(scriptIn), 0o644)
 	if err != nil {
 		return err
 	}
+
 	return nil
 }
 
 // remove vrrp script file on system.
 func removeVrrpScriptFile(vrrpScript vrrpScriptType) error {
-	err := os.Remove(strings.Join([]string{"/etc/keepalived/keepalived-vrrp.d/",
-		"script_", vrrpScript.Name, ".conf"}, ""))
+	err := os.Remove(strings.Join([]string{
+		"/etc/keepalived/keepalived-vrrp.d/",
+		"script_", vrrpScript.Name, ".conf",
+	}, ""))
 	if err != nil {
 		return err
 	}
+
 	return nil
 }
 
 // generate vrrp script file string.
 func generateScriptFile(vrrpScript vrrpScriptType) string {
-	scriptIn := strings.Join([]string{"vrrp_script ", vrrpScript.Name, " {\n",
-		"\tscript \"", vrrpScript.Script, "\"\n"}, "")
+	scriptIn := strings.Join([]string{
+		"vrrp_script ", vrrpScript.Name, " {\n",
+		"\tscript \"", vrrpScript.Script, "\"\n",
+	}, "")
 	if vrrpScript.Fall != 0 {
 		scriptIn = strings.Join([]string{scriptIn, "\tfall ", strconv.Itoa(vrrpScript.Fall), "\n"}, "")
 	}
@@ -749,6 +832,7 @@ func generateScriptFile(vrrpScript vrrpScriptType) string {
 		scriptIn = strings.Join([]string{scriptIn, "\tinit_fail\n"}, "")
 	}
 	scriptIn = strings.Join([]string{scriptIn, "}\n"}, "")
+
 	return scriptIn
 }
 
@@ -756,8 +840,10 @@ func generateScriptFile(vrrpScript vrrpScriptType) string {
 func readVrrpScriptFile(scriptName string) (vrrpScriptType, error) {
 	var scriptRead vrrpScriptType
 	var err error
-	scriptReadByte, err := ioutil.ReadFile(strings.Join([]string{"/etc/keepalived/keepalived-vrrp.d/",
-		"script_", scriptName, ".conf"}, ""))
+	scriptReadByte, err := ioutil.ReadFile(strings.Join([]string{
+		"/etc/keepalived/keepalived-vrrp.d/",
+		"script_", scriptName, ".conf",
+	}, ""))
 	if err != nil {
 		return scriptRead, err
 	}
@@ -813,5 +899,6 @@ func readVrrpScriptFile(scriptName string) (vrrpScriptType, error) {
 			return scriptRead, fmt.Errorf("vrrp script file has unknown line %q", line)
 		}
 	}
+
 	return scriptRead, nil
 }
