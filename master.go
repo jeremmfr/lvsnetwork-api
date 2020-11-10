@@ -201,14 +201,14 @@ func addIfaceVrrp(w http.ResponseWriter, r *http.Request) {
 				sleep()
 				err2 := checkVlanCom(ifaceVrrp)
 				if err2 != nil {
-					errReturn := fmt.Errorf("%v %v", err, err2)
+					errReturn := fmt.Errorf("%v %v", err, err2) // nolint: errorlint
 					err3 := removeIfaceSlave(ifaceVrrp)
 					if err3 != nil {
-						errReturn = fmt.Errorf("%v %v", errReturn, err3)
+						errReturn = fmt.Errorf("%v %v", errReturn, err3) // nolint: errorlint
 					}
 					err3 = removeIface(ifaceVrrp)
 					if err3 != nil {
-						errReturn = fmt.Errorf("%v %v", errReturn, err3)
+						errReturn = fmt.Errorf("%v %v", errReturn, err3) // nolint: errorlint
 					}
 					http.Error(w, errReturn.Error(), 500)
 
