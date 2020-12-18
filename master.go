@@ -12,6 +12,7 @@ import (
 
 	auth "github.com/abbot/go-http-auth"
 	"github.com/gorilla/mux"
+	"golang.org/x/mod/semver"
 )
 
 // checkVlanCom : ping IP 'ipslave' (in json) from master server (check if L2 ok).
@@ -133,6 +134,12 @@ func addIfaceVrrp(w http.ResponseWriter, r *http.Request) {
 	ifaceVrrp.Iface = vars["iface"]
 	sort.Strings(ifaceVrrp.IPVip)
 	sort.Strings(ifaceVrrp.PostUp)
+	if ifaceVrrp.UseVmac {
+		if semver.Compare(keepalivedVersion, "v2.0.0") == 1 &&
+			semver.Compare(keepalivedVersion, "v2.0.13") == -1 {
+			ifaceVrrp.UseVmac = false
+		}
+	}
 
 	validate := ifaceVrrp.validate()
 	if validate != "" {
@@ -361,6 +368,12 @@ func removeIfaceVrrp(w http.ResponseWriter, r *http.Request) {
 	ifaceVrrp.Iface = vars["iface"]
 	sort.Strings(ifaceVrrp.IPVip)
 	sort.Strings(ifaceVrrp.PostUp)
+	if ifaceVrrp.UseVmac {
+		if semver.Compare(keepalivedVersion, "v2.0.0") == 1 &&
+			semver.Compare(keepalivedVersion, "v2.0.13") == -1 {
+			ifaceVrrp.UseVmac = false
+		}
+	}
 
 	validate := ifaceVrrp.validate()
 	if validate != "" {
@@ -491,6 +504,12 @@ func checkIfaceVrrp(w http.ResponseWriter, r *http.Request) {
 	ifaceVrrp.Iface = vars["iface"]
 	sort.Strings(ifaceVrrp.IPVip)
 	sort.Strings(ifaceVrrp.PostUp)
+	if ifaceVrrp.UseVmac {
+		if semver.Compare(keepalivedVersion, "v2.0.0") == 1 &&
+			semver.Compare(keepalivedVersion, "v2.0.13") == -1 {
+			ifaceVrrp.UseVmac = false
+		}
+	}
 
 	validate := ifaceVrrp.validate()
 	if validate != "" {
@@ -681,6 +700,12 @@ func changeIfaceVrrp(w http.ResponseWriter, r *http.Request) {
 	ifaceVrrp.Iface = vars["iface"]
 	sort.Strings(ifaceVrrp.IPVip)
 	sort.Strings(ifaceVrrp.PostUp)
+	if ifaceVrrp.UseVmac {
+		if semver.Compare(keepalivedVersion, "v2.0.0") == 1 &&
+			semver.Compare(keepalivedVersion, "v2.0.13") == -1 {
+			ifaceVrrp.UseVmac = false
+		}
+	}
 
 	validate := ifaceVrrp.validate()
 	if validate != "" {
@@ -1043,6 +1068,12 @@ func moveIDIfaceVrrp(w http.ResponseWriter, r *http.Request) {
 	ifaceVrrp.Iface = vars["iface"]
 	sort.Strings(ifaceVrrp.IPVip)
 	sort.Strings(ifaceVrrp.PostUp)
+	if ifaceVrrp.UseVmac {
+		if semver.Compare(keepalivedVersion, "v2.0.0") == 1 &&
+			semver.Compare(keepalivedVersion, "v2.0.13") == -1 {
+			ifaceVrrp.UseVmac = false
+		}
+	}
 
 	validate := ifaceVrrp.validate()
 	if validate != "" {

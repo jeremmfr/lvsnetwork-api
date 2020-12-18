@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -13,6 +14,7 @@ import (
 
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
+	"golang.org/x/mod/semver"
 )
 
 type ifaceVrrpType struct {
@@ -65,6 +67,7 @@ var (
 	reloadKeepalivedCommand *string
 	debug                   *bool
 	mutex                   = &sync.Mutex{}
+	keepalivedVersion       string
 )
 
 const (
@@ -98,6 +101,7 @@ func main() {
 	}
 
 	checkIfupdownVersion()
+	checkKeepalivedVersion()
 
 	// create router
 	router := mux.NewRouter().StrictSlash(true)
@@ -180,6 +184,32 @@ func checkIfupdownVersion() {
 	}
 	if !strings.Contains(string(returnCmd), "state") {
 		log.Fatalf("no state for ifquery, go upgrade ifupdown package")
+	}
+}
+
+func checkKeepalivedVersion() {
+	cmd := exec.Command("keepalived", "-v")
+	stderr, err := cmd.StderrPipe()
+	if err != nil {
+		log.Fatal(err)
+	}
+	if err := cmd.Start(); err != nil {
+		log.Fatal(err)
+	}
+	returnCmd, _ := ioutil.ReadAll(stderr)
+
+	err = cmd.Wait()
+	if err != nil {
+		log.Fatal(err)
+	}
+	returnCmdLines := strings.Split(string(returnCmd), " ")
+	if len(returnCmdLines) < 2 { // nolint: gomnd
+		log.Fatal(fmt.Errorf("fail to read keepalived version, "+
+			"split result in separate words failed : %s", string(returnCmd)))
+	}
+	keepalivedVersion = returnCmdLines[1]
+	if !semver.IsValid(keepalivedVersion) {
+		log.Fatal(fmt.Errorf("fail to read keepalived version : %s", keepalivedVersion))
 	}
 }
 

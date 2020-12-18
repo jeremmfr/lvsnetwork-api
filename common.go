@@ -10,6 +10,8 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+
+	"golang.org/x/mod/semver"
 )
 
 const (
@@ -346,11 +348,13 @@ func generateVrrpFile(ifaceVrrp ifaceVrrpType, syncAdd bool) (string, error) {
 			vrrpIn = strings.Join([]string{vrrpIn, "\tinterface ", ifaceCut, "\n"}, "")
 		}
 	}
-	vrrpIn = strings.Join([]string{
-		vrrpIn, "\ttrack_interface {\n",
-		"\t\t", ifaceCut, "\n",
-		"\t}\n",
-	}, "")
+	if semver.Compare(keepalivedVersion, "v2.0.0") == -1 {
+		vrrpIn = strings.Join([]string{
+			vrrpIn, "\ttrack_interface {\n",
+			"\t\t", ifaceCut, "\n",
+			"\t}\n",
+		}, "")
+	}
 	if len(ifaceVrrp.TrackScript) > 0 {
 		vrrpIn = strings.Join([]string{vrrpIn, "\ttrack_script {\n"}, "")
 		for _, script := range ifaceVrrp.TrackScript {
